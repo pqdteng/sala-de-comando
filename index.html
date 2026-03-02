@@ -285,28 +285,29 @@
             if(globalData.length > 0) updateGPS(); 
         }
 
-        // Nova função para tratar datas vindas como String do CSV
+// NOVA FUNÇÃO BLINDADA PARA DATAS (EXCEL E GOOGLE)
         function parseExcelDate(val) {
             if (!val) return null;
-            if (typeof val === 'string') {
-                let parts = val.split(' ').split('/');
+            let strVal = String(val).trim().split(' '); 
+            
+            // Padrão Brasileiro (DD/MM/AAAA)
+            if (strVal.includes('/')) {
+                let parts = strVal.split('/');
                 if(parts.length === 3) {
-                    [cite_start]let year = parseInt(parts[2], 10);
+                    let year = parseInt(parts, 10);
                     if (year < 100) year += 2000;
-                    [cite_start]return new Date(year, parseInt(parts[1], 10) - 1, parseInt(parts, 10));
+                    return new Date(year, parseInt(parts, 10) - 1, parseInt(parts, 10));
+                }
+            }
+            // Padrão Google Nuvem (AAAA-MM-DD)
+            if (strVal.includes('-')) {
+                let parts = strVal.split('-');
+                if(parts.length === 3) {
+                    return new Date(parseInt(parts, 10), parseInt(parts, 10) - 1, parseInt(parts, 10));
                 }
             }
             return null;
         }
-
-        function getWeekNumber(d) {
-            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-            var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
-            return `${d.getUTCFullYear()} - Semana ${weekNo.toString().padStart(2, '0')}`;
-        }
-
         // A MÁGICA DA CONEXÃO EM NUVEM (PAPA PARSE)
         function loadGoogleSheetsData() {
             document.getElementById('mission-title').innerText = "Sincronizando Satélite...";
@@ -516,3 +517,4 @@
     </script>
 </body>
 </html>
+
