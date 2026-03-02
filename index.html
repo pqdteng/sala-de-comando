@@ -119,7 +119,7 @@
                 <option value="all">Visão Geral (Todas as Disciplinas)</option>
             </select>
             <div class="upload-btn-wrapper">
-                <button class="btn"><i class="fas fa-upload"></i> Carregar Planilha</button>
+                <button class="btn" id="btn-upload-text"><i class="fas fa-upload"></i> Carregar Planilha</button>
                 <input type="file" id="file-upload" />
             </div>
         </div>
@@ -276,20 +276,16 @@
             if(globalData.length > 0) updateGPS(); 
         }
 
-        // Leitura de Datas do Excel
+        // Leitura de Datas do Excel (Motor Original)
         function parseExcelDate(val) {
             if (!val) return null;
             if (typeof val === 'number') { return new Date(Math.round((val - 25569) * 86400 * 1000)); }
             if (typeof val === 'string') {
-                let parts = val.split(' ').split('/');
+                let parts = val.split('/');
                 if(parts.length === 3) {
-                    let year = parseInt(parts, 10);
+                    let year = parseInt(parts[2], 10);
                     if (year < 100) year += 2000;
-                    return new Date(year, parseInt(parts, 10) - 1, parseInt(parts, 10));
-                }
-                let partsHifen = val.split(' ').split('-');
-                if(partsHifen.length === 3) {
-                    return new Date(parseInt(partsHifen, 10), parseInt(partsHifen, 10) - 1, parseInt(partsHifen, 10));
+                    return new Date(year, parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
                 }
                 return new Date(val);
             }
@@ -304,44 +300,69 @@
             return `${d.getUTCFullYear()} - Semana ${weekNo.toString().padStart(2, '0')}`;
         }
 
-        // MOTOR DE UPLOAD (EXCEL)
+        // MOTOR DE UPLOAD (EXCEL) COM RADAR DE ERROS
         document.getElementById('file-upload').addEventListener('change', function(e) {
-            var file = e.target.files;
+            var file = e.target.files[0];
             if(!file) return;
+
+            // Muda o texto do botão para mostrar que está lendo
+            document.getElementById('btn-upload-text').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
 
             var reader = new FileReader();
             reader.onload = function(e) {
-                var data = new Uint8Array(e.target.result);
-                var workbook = XLSX.read(data, {type: 'array', cellDates: true});
-                var worksheetName = workbook.Sheets["Base"] ? "Base" : workbook.SheetNames;
-                var worksheet = workbook.Sheets[worksheetName];
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, raw: false, dateNF: 'dd/mm/yyyy'});
-                
-                processData(jsonData);
+                try {
+                    var data = new Uint8Array(e.target.result);
+                    var workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                    var worksheetName = workbook.Sheets["Base"] ? "Base" : workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[worksheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, raw: false, dateNF: 'dd/mm/yyyy'});
+                    
+                    processData(jsonData);
+                    
+                    // Volta o botão ao normal
+                    document.getElementById('btn-upload-text').innerHTML = '<i class="fas fa-check"></i> Planilha Carregada';
+                    document.getElementById('btn-upload-text').style.backgroundColor = "var(--accent-green)";
+                    
+                } catch (error) {
+                    // SE ALGO DER ERRADO, O ALERTA SALTA NA TELA!
+                    alert("Atenção Comandante! Erro ao ler a planilha: \n" + error.message);
+                    document.getElementById('btn-upload-text').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Falha no Upload';
+                    document.getElementById('btn-upload-text').style.backgroundColor = "var(--accent-red)";
+                }
             };
             reader.readAsArrayBuffer(file);
+            
+            // Trava de segurança para permitir subir a mesma planilha sem precisar de F5
+            this.value = null; 
         });
 
-        // PROCESSAMENTO DOS DADOS DO EXCEL
+        // PROCESSAMENTO DOS DADOS DO EXCEL (CÓDIGO ORIGINAL BLINDADO)
         function processData(jsonData) {
             globalData = []; let uniqueSubjects = new Set(); groupedDaily = {}; groupedWeekly = {}; latestTopicsMap = {};
             currentWeekStr = getWeekNumber(new Date());
 
             for (let i = 2; i < jsonData.length; i++) {
                 let row = jsonData[i];
-                if (!row || row.length < 2) continue;
                 
-                let strTempo = row ? String(row).replace(',', '.') : '0';
-                let strQ = row ? String(row).replace(',', '.') : '0';
-                let strA = row ? String(row).replace(',', '.') : '0';
+                // Trava original: Se não tiver as colunas completas, ignora.
+                if (!row || row.length < 7) continue; 
+                
+                // Converte garantindo que a vírgula vire ponto se houver
+                let strTempo = row[4] ? String(row[4]).replace(',', '.') : '0';
+                let strQ = row[5] ? String(row[5]).replace(',', '.') : '0';
+                let strA = row[6] ? String(row[6]).replace(',', '.') : '0';
 
                 let questoes = parseFloat(strQ) || 0;
                 
                 if(questoes > 0) {
-                    let dateObj = parseExcelDate(row) || new Date();
-                    let mat = row ? String(row).trim() : 'Sem Matéria';
-                    let topico = row ? String(row).trim() : 'Sem Tópico';
-                    let tipoEstudo = row ? String(row).trim() : '';
+                    let dateObj = parseExcelDate(row[0]);
+                    
+                    // Se a data vier corrompida, ele ignora a linha para não travar os gráficos
+                    if(!dateObj || isNaN(dateObj)) continue;
+
+                    let mat = row[1] ? String(row[1]).trim() : 'Sem Matéria';
+                    let topico = row[2] ? String(row[2]).trim() : 'Sem Tópico';
+                    let tipoEstudo = row[3] ? String(row[3]).trim() : '';
                     let acertos = parseFloat(strA) || 0;
                     let tempo = parseFloat(strTempo) || 0;
                     let accPct = (acertos / questoes);
@@ -397,7 +418,7 @@
 
             if(globalData.length > 0) {
                 globalData.sort((a, b) => b.dataReal - a.dataReal);
-                let ultimaMateriaEstudada = globalData.mat.toUpperCase() + " " + globalData.topico.toUpperCase();
+                let ultimaMateriaEstudada = globalData[0].mat.toUpperCase() + " " + globalData[0].topico.toUpperCase();
                 
                 let indiceAtual = -1;
                 for(let i=0; i<cicloMaster.length; i++) {
@@ -421,10 +442,10 @@
                 } else {
                     document.getElementById('mission-title').innerText = "Retomar Ciclo Padrão";
                     document.getElementById('mission-title').style.color = "var(--accent-green)";
-                    document.getElementById('mission-t1').innerText = cicloMaster.nome;
-                    document.getElementById('mission-t2').innerText = cicloMaster.nome;
-                    document.getElementById('mission-t3').innerText = cicloMaster.nome;
-                    document.getElementById('mission-t4').innerText = cicloMaster.nome;
+                    document.getElementById('mission-t1').innerText = cicloMaster[0].nome;
+                    document.getElementById('mission-t2').innerText = cicloMaster[1].nome;
+                    document.getElementById('mission-t3').innerText = cicloMaster[2].nome;
+                    document.getElementById('mission-t4').innerText = cicloMaster[3].nome;
                 }
             }
 
@@ -437,7 +458,7 @@
                 let diasAtras = Math.floor((hoje - info.date) / (1000 * 60 * 60 * 24));
                 if(info.acc < 0.90 || diasAtras > 7) {
                     let matchUrl = info.tipo.match(urlRegex);
-                    let linkHtml = matchUrl ? `<a href="${matchUrl}" target="_blank" class="badge link-badge"><i class="fas fa-external-link-alt"></i> Ir pro Caderno</a>` : '';
+                    let linkHtml = matchUrl ? `<a href="${matchUrl[0]}" target="_blank" class="badge link-badge"><i class="fas fa-external-link-alt"></i> Ir pro Caderno</a>` : '';
                     alertas.push({ topico: u, mat: info.mat, acc: (info.acc*100).toFixed(0), dias: diasAtras, btnLink: linkHtml });
                 }
             });
@@ -462,12 +483,12 @@
         function closeModal() { document.getElementById('detailsModal').style.display = 'none'; } window.onclick = function(e) { let modal = document.getElementById('detailsModal'); if (e.target == modal) { modal.style.display = "none"; } }
         
         function updateDashboard(subjectFilter) { 
-            let filteredData = subjectFilter !== 'all' ? globalData.filter(item => String(item.rowData).trim() === subjectFilter) : globalData; 
+            let filteredData = subjectFilter !== 'all' ? globalData.filter(item => String(item.rowData[1]).trim() === subjectFilter) : globalData; 
             let totalQ = 0, totalA = 0, totalMin = 0; let groups = {}; 
             filteredData.forEach(item => { 
-                let row = item.rowData; let questoes = parseFloat(String(row).replace(',','.')) || 0; let acertos = parseFloat(String(row).replace(',','.')) || 0; let tempo = parseFloat(String(row).replace(',','.')) || 0; 
+                let row = item.rowData; let questoes = parseFloat(String(row[5]).replace(',','.')) || 0; let acertos = parseFloat(String(row[6]).replace(',','.')) || 0; let tempo = parseFloat(String(row[4]).replace(',','.')) || 0; 
                 totalQ += questoes; totalA += acertos; totalMin += tempo; 
-                let groupKey = subjectFilter === 'all' ? (row ? String(row).trim() : 'ND') : (row ? String(row).trim() : 'Tópico Indefinido'); 
+                let groupKey = subjectFilter === 'all' ? (row[1] ? String(row[1]).trim() : 'ND') : (row[2] ? String(row[2]).trim() : 'Tópico Indefinido'); 
                 if(groupKey.length > 50) groupKey = groupKey.substring(0, 47) + "..."; 
                 if (!groups[groupKey]) groups[groupKey] = { q: 0, a: 0, t: 0 }; 
                 groups[groupKey].q += questoes; groups[groupKey].a += acertos; groups[groupKey].t += tempo; 
