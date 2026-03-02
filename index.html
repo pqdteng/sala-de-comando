@@ -335,7 +335,7 @@
             currentWeekStr = getWeekNumber(new Date());
 
             // Loop começa em 2 assumindo que a linha 0 é o cabeçalho e a 1 são as instruções
-            for (let i = 2; i < jsonData.length; i++) {
+            for (let i = 1; i < jsonData.length; i++) {
                 let row = jsonData[i];
                 if (!row || row.length < 7) continue;
                 [cite_start]let questoes = parseFloat(row[5]) || 0;
@@ -517,4 +517,5 @@
     </script>
 </body>
 </html>
+
 
