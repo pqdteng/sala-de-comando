@@ -29,7 +29,6 @@
         .btn { border: 1px solid #444; color: white; background-color: var(--accent-blue); padding: 10px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;}
         .btn:hover { background-color: #2a6bdd; transform: scale(1.05); color: white;}
         
-        /* NOVO BOTÃO DO FORMS */
         .btn-forms { background-color: var(--accent-purple); border-color: #6a1b9a; }
         .btn-forms:hover { background-color: #6a1b9a; }
 
@@ -38,8 +37,13 @@
         
         select.btn { background-color: #2A2A2A; color: #E0E0E0; display: none; }
 
-        .focus-section { display: flex; justify-content: center; margin-bottom: 30px; }
-        .timer-container { background-color: #0A0A0A; border: 2px solid #333; border-radius: 15px; padding: 20px 50px; display: flex; flex-direction: column; align-items: center; gap: 15px; box-shadow: 0 0 30px rgba(255, 190, 11, 0.15); width: fit-content; }
+        .focus-section { display: flex; justify-content: center; align-items: center; gap: 40px; margin-bottom: 30px; flex-wrap: wrap; }
+        
+        .datetime-container { background-color: #0A0A0A; border: 2px solid #333; border-radius: 15px; padding: 20px 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(58, 134, 255, 0.15); height: 100%; }
+        #date-display { font-size: 1.2em; color: #AAA; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; }
+        #clock-display { font-family: 'Courier New', Courier, monospace; font-size: 3.5em; font-weight: bold; color: var(--accent-blue); text-shadow: 0 0 15px rgba(58, 134, 255, 0.6); letter-spacing: 3px; line-height: 1; }
+
+        .timer-container { background-color: #0A0A0A; border: 2px solid #333; border-radius: 15px; padding: 20px 50px; display: flex; flex-direction: column; align-items: center; gap: 15px; box-shadow: 0 0 30px rgba(255, 190, 11, 0.15); width: fit-content; height: 100%; }
         .timer-display { font-family: 'Courier New', Courier, monospace; font-size: 5em; font-weight: bold; color: var(--accent-orange); text-shadow: 0 0 20px rgba(255, 190, 11, 0.6); letter-spacing: 5px; line-height: 1; }
         .timer-controls { display: flex; gap: 30px; }
         .timer-controls button { background: none; border: none; color: #888; font-size: 2.5em; cursor: pointer; transition: 0.2s; }
@@ -130,6 +134,12 @@
     </div>
 
     <div class="focus-section">
+        
+        <div class="datetime-container">
+            <div id="date-display">--/--/----</div>
+            <div id="clock-display">--:--:--</div>
+        </div>
+
         <div class="timer-container">
             <div class="timer-display" id="timer-display">00:00:00</div>
             <div class="timer-controls">
@@ -138,6 +148,7 @@
                 <button class="stop-btn" onclick="resetTimer()" title="Zerar"><i class="fas fa-stop"></i></button>
             </div>
         </div>
+
     </div>
     
     <div class="gps-container" id="gps-panel">
@@ -176,9 +187,9 @@
                     </div>
                 </div>
 
-                <div class="action-box alert">
-                    <h4><i class="fas fa-exclamation-triangle"></i> Atenção aos Unificados</h4>
-                    <div id="gps-revisao-lista">
+                <div class="action-box">
+                    <h4><i class="fas fa-history"></i> Últimas 3 Baterias</h4>
+                    <div id="gps-ultimas-baterias">
                         <p>Aguardando Conexão...</p>
                     </div>
                 </div>
@@ -234,10 +245,16 @@
     </div>
 
     <script>
-        // =========================================================================
-        // ATENÇÃO: COLE AQUI O LINK CSV DA SUA NOVA ABA "Base_Dashboard"
-        // =========================================================================
         const GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0a4jqJIh9Mrir8W0YpzBPlfqH7G-LP7JIyp7a5eyjnhcd3pAc8GdiBe7p4gKVZ-IA_KzWNqIkLLaH/pub?gid=1981415951&single=true&output=csv";
+
+        function updateClock() {
+            const now = new Date();
+            const optionsDate = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
+            document.getElementById('date-display').innerText = now.toLocaleDateString('pt-BR', optionsDate).replace('.', '');
+            document.getElementById('clock-display').innerText = now.toLocaleTimeString('pt-BR');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
 
         let timerInterval; let timerSeconds = 0; let isTimerRunning = false;
         if(localStorage.getItem('pqdtTimer')) { timerSeconds = parseInt(localStorage.getItem('pqdtTimer')); }
@@ -277,7 +294,6 @@
             if(localStorage.getItem('metaQ')) document.getElementById('meta-q').value = localStorage.getItem('metaQ');
             updateTimerDisplay();
             
-            // Verifica se o usuário trocou o link, para não dar erro
             if (GOOGLE_SHEETS_URL !== "SEU_NOVO_LINK_CSV_DA_ABA_BASE_DASHBOARD_AQUI") {
                 setTimeout(loadGoogleSheetsData, 500); 
             } else {
@@ -370,10 +386,10 @@
                 let questoes = parseFloat(strQ) || 0;
                 
                 if(questoes > 0) {
-                    let dateObj = parseExcelDate(row[1]); // <-- Data (B)
-                    let mat = row[2] ? String(row[2]).trim() : 'Sem Matéria'; // <-- Matéria (C)
-                    let topico = row[3] ? String(row[3]).trim() : 'Sem Tópico'; // <-- Tópico (D)
-                    let tipoEstudo = row[4] ? String(row[4]).trim() : ''; // <-- Tipo (E)
+                    let dateObj = parseExcelDate(row[1]); 
+                    let mat = row[2] ? String(row[2]).trim() : 'Sem Matéria'; 
+                    let topico = row[3] ? String(row[3]).trim() : 'Sem Tópico'; 
+                    let tipoEstudo = row[4] ? String(row[4]).trim() : ''; 
                     let acertos = parseFloat(strA) || 0;
                     let tempo = parseFloat(strTempo) || 0;
                     let accPct = (acertos / questoes);
@@ -460,30 +476,34 @@
                 }
             }
 
-            let unificados = Object.keys(latestTopicsMap).filter(t => t.toUpperCase().includes('UNIFICADO') || latestTopicsMap[t].tipo.toUpperCase().includes('UNIFICADO'));
-            let alertas = []; let hoje = new Date();
-            const urlRegex = /(https?:\/\/[^\s]+)/; 
-
-            unificados.forEach(u => {
-                let info = latestTopicsMap[u];
-                let diasAtras = Math.floor((hoje - info.date) / (1000 * 60 * 60 * 24));
-                if(info.acc < 0.90 || diasAtras > 7) {
-                    let matchUrl = info.tipo.match(urlRegex);
-                    let linkHtml = matchUrl ? `<a href="${matchUrl[0]}" target="_blank" class="badge link-badge"><i class="fas fa-external-link-alt"></i> Ir pro Caderno</a>` : '';
-                    alertas.push({ topico: u, mat: info.mat, acc: (info.acc*100).toFixed(0), dias: diasAtras, btnLink: linkHtml });
+            let ultimasBateriasContainer = document.getElementById('gps-ultimas-baterias');
+            if(globalData.length > 0) {
+                let html = '<ul class="mission-list" style="margin-top: 10px;">';
+                
+                // Pega os 3 primeiros itens (como a globalData já foi ordenada por data decrescente acima, são os 3 mais recentes)
+                let limite = Math.min(3, globalData.length);
+                for(let i = 0; i < limite; i++) {
+                    let item = globalData[i];
+                    let dataFormatada = item.dataReal.toLocaleDateString('pt-BR');
+                    let mat = item.mat;
+                    let questoes = parseFloat(String(item.rowData[6]).replace(',', '.')) || 0;
+                    let acertos = parseFloat(String(item.rowData[7]).replace(',', '.')) || 0;
+                    let pct = questoes > 0 ? ((acertos / questoes) * 100).toFixed(1) : 0;
+                    
+                    // Define a cor da badge com base no desempenho
+                    let corBadge = pct >= 80 ? 'var(--accent-green)' : (pct >= 70 ? 'var(--accent-orange)' : 'var(--accent-red)');
+                    
+                    html += `<li style="margin-bottom: 12px; border-bottom: 1px solid #444; padding-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span><strong>${mat}</strong> <span style="font-size: 12px; color: #888;">(${dataFormatada})</span></span>
+                                    <span class="badge" style="background-color: ${corBadge}; font-size: 13px;">${pct}%</span>
+                                </div>
+                             </li>`;
                 }
-            });
-
-            let alertContainer = document.getElementById('gps-revisao-lista');
-            if(alertas.length > 0) {
-                alertas.sort((a, b) => a.acc - b.acc);
-                let html = '';
-                alertas.slice(0, 3).forEach(a => {
-                    html += `<div style="margin-bottom:12px; line-height:1.4;"><strong>${a.mat}:</strong> ${a.topico.substring(0,35)}...<br><span class="badge warning">Acerto: ${a.acc}%</span> <span class="badge" style="background:#555;">Visto há ${a.dias} dias</span> ${a.btnLink}</div>`;
-                });
-                alertContainer.innerHTML = html;
+                html += '</ul>';
+                ultimasBateriasContainer.innerHTML = html;
             } else {
-                alertContainer.innerHTML = `<p style="color:var(--accent-green); font-size:15px; font-weight:bold;"><i class="fas fa-check-circle"></i> Unificados blindados! Tudo acima de 90% e em dia.</p>`;
+                ultimasBateriasContainer.innerHTML = '<p>Nenhum dado encontrado.</p>';
             }
         }
 
