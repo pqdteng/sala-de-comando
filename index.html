@@ -274,19 +274,16 @@
         let groupedDaily = {}; let groupedWeekly = {}; let latestTopicsMap = {}; let currentWeekStr = "";
 
         const cicloMaster = [
-            { id: 0, nome: "Engenharia: PNFL", chaves: ["PNFL", "PLANEJAMENTO"] },
-            { id: 1, nome: "AFO", chaves: ["AFO", "ORÇAMENTO"] },
-            { id: 2, nome: "Controle Externo + Dir. Constitucional", chaves: ["CONTROLE", "CEX", "CONSTITUCIONAL", "DCO"] },
-            { id: 3, nome: "Auditoria Pública", chaves: ["AUDITORIA", "AUDG"] },
-            { id: 4, nome: "Engenharia: EDF", chaves: ["EDF", "EDIFICAÇÕES"] },
-            { id: 5, nome: "Dir. Administrativo + Português", chaves: ["ADMINISTRATIVO", "DAD", "PORTUGUÊS", "POR"] },
-            { id: 6, nome: "AFO", chaves: ["AFO", "ORÇAMENTO"] },
-            { id: 7, nome: "Engenharia: OR", chaves: ["OR", "RODOVIÁRIA"] },
-            { id: 8, nome: "Auditoria (Foco Obras)", chaves: ["AUDITORIA", "OBRAS"] },
-            { id: 9, nome: "Controle Externo + Dir. Constitucional", chaves: ["CONTROLE", "CEX", "CONSTITUCIONAL", "DCO"] },
-            { id: 10, nome: "Engenharia: OH", chaves: ["OH", "HÍDRICA", "SANEAMENTO"] },
-            { id: 11, nome: "AFO", chaves: ["AFO", "ORÇAMENTO"] },
-            { id: 12, nome: "Bateria Geral (Cadernos Unificados)", chaves: ["UNIFICADO"] }
+            { id: 0, nome: "Eng: Planejamento/Orçamento + Auditoria de Obras", chaves: ["PNFL", "PLANEJAMENTO", "OBRAS", "AUDITORIA"] },
+            { id: 1, nome: "AFO / Orçamento Público", chaves: ["AFO", "ORÇAMENTO"] },
+            { id: 2, nome: "Dir. Constitucional + Controle Externo (TCE-SP)", chaves: ["CONSTITUCIONAL", "DCO", "CONTROLE", "CEX", "SP"] },
+            { id: 3, nome: "Contabilidade (Pública e Geral)", chaves: ["CONTABILIDADE", "CASP", "GERAL"] },
+            { id: 4, nome: "Eng: Edificações/Estruturas + Ambiental", chaves: ["EDF", "EDIFICAÇÕES", "ESTRUTURAS", "AMBIENTAL"] },
+            { id: 5, nome: "Dir. Administrativo (Geral/SP) + Português", chaves: ["ADMINISTRATIVO", "DAD", "PORTUGUÊS", "POR", "SP"] },
+            { id: 6, nome: "Reforço: AFO + Contabilidade", chaves: ["AFO", "CONTABILIDADE", "CASP"] },
+            { id: 7, nome: "Eng: Rodoviária e Hídrica (OR/OH)", chaves: ["OR", "RODOVIÁRIA", "OH", "HÍDRICA", "SANEAMENTO"] },
+            { id: 8, nome: "RLM + Informática", chaves: ["RACIOCÍNIO", "RLM", "LÓGICA", "INFORMÁTICA", "INF"] },
+            { id: 9, nome: "Auditoria Governamental + Bateria Vunesp", chaves: ["AUDITORIA", "GOVERNAMENTAL", "UNIFICADO", "VUNESP"] }
         ];
 
         window.onload = function() {
