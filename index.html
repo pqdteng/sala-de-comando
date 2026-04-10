@@ -245,7 +245,7 @@
     </div>
 
     <script>
-        const GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0a4jqJIh9Mrir8W0YpzBPlfqH7G-LP7JIyp7a5eyjnhcd3pAc8GdiBe7p4gKVZ-IA_KzWNqIkLLaH/pub?gid=1981415951&single=true&output=csv";
+        const GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0a4jqJIh9Mrir8W0YpzBPlfqH7G-LP7JIyp7a5eyjnhcd3pAc8GdiBe7p4gKVZ-IA_KzWNqIkLLaH/pub?gid=1981415951&single=true&output=csv"; // Cole seu link aqui novamente!
 
         function updateClock() {
             const now = new Date();
@@ -273,17 +273,18 @@
         let globalData = []; let chart1Obj, chart2Obj, chart3Obj; let currentReportMode = 'diario';
         let groupedDaily = {}; let groupedWeekly = {}; let latestTopicsMap = {}; let currentWeekStr = "";
 
+        // 1. CICLO MASTER ATUALIZADO (Usando as exatas siglas do dropdown)
         const cicloMaster = [
-            { id: 0, nome: "Eng: Planejamento/Orçamento + Auditoria de Obras", chaves: ["PNFL", "PLANEJAMENTO", "OBRAS", "AUDITORIA"] },
-            { id: 1, nome: "AFO / Orçamento Público", chaves: ["AFO", "ORÇAMENTO"] },
-            { id: 2, nome: "Dir. Constitucional + Controle Externo (TCE-SP)", chaves: ["CONSTITUCIONAL", "DCO", "CONTROLE", "CEX", "SP"] },
-            { id: 3, nome: "Contabilidade (Pública e Geral)", chaves: ["CONTABILIDADE", "CASP", "CTG"] },
-            { id: 4, nome: "Eng: Edificações/Estruturas + Ambiental", chaves: ["EDF", "EDIFICAÇÕES", "ESTRUTURAS", "AMBIENTAL"] },
-            { id: 5, nome: "Dir. Administrativo (Geral/SP) + Português", chaves: ["ADMINISTRATIVO", "DAD", "PORTUGUÊS", "POR", "SP"] },
-            { id: 6, nome: "Reforço: AFO + Contabilidade", chaves: ["AFO", "CONTABILIDADE", "CASP"] },
-            { id: 7, nome: "Eng: Rodoviária e Hídrica (OR/OH)", chaves: ["OR", "RODOVIÁRIA", "OH", "HÍDRICA", "SANEAMENTO"] },
-            { id: 8, nome: "RLM + Informática", chaves: ["RACIOCÍNIO", "RLM", "LÓGICA", "INFORMÁTICA", "INF"] },
-            { id: 9, nome: "Auditoria Governamental + Bateria Vunesp", chaves: ["AUDITORIA", "GOVERNAMENTAL", "UNIFICADO", "VUNESP"] }
+            { id: 0, nome: "Eng: Planejamento/Orçamento + Auditoria de Obras", chaves: ["PNFL"] },
+            { id: 1, nome: "AFO / Orçamento Público", chaves: ["AFO"] },
+            { id: 2, nome: "Dir. Constitucional + Controle Externo (TCE-SP)", chaves: ["DCO", "CEX"] },
+            { id: 3, nome: "Contabilidade (Pública e Geral)", chaves: ["CASP", "CTG"] },
+            { id: 4, nome: "Eng: Edificações/Estruturas + Ambiental", chaves: ["EDF"] },
+            { id: 5, nome: "Dir. Administrativo (Geral/SP) + Português", chaves: ["DAD", "POR"] },
+            { id: 6, nome: "Reforço: AFO + Contabilidade", chaves: ["AFO", "CASP", "CTG"] },
+            { id: 7, nome: "Eng: Rodoviária e Hídrica (OR/OH)", chaves: ["OR", "OH"] },
+            { id: 8, nome: "RLM + Informática", chaves: ["RLM", "INF"] }, 
+            { id: 9, nome: "Auditoria Governamental + Bateria Vunesp", chaves: ["AUDG"] }
         ];
 
         window.onload = function() {
@@ -442,13 +443,21 @@
 
             if(globalData.length > 0) {
                 globalData.sort((a, b) => b.dataReal - a.dataReal);
-                let ultimaMateriaEstudada = globalData[0].mat.toUpperCase() + " " + globalData[0].topico.toUpperCase();
                 
                 let indiceAtual = -1;
-                for(let i=0; i<cicloMaster.length; i++) {
-                    if(cicloMaster[i].chaves.some(chave => ultimaMateriaEstudada.includes(chave))) {
-                        indiceAtual = i; break;
+
+                // 2. A MÁQUINA DO TEMPO (Busca inteligente)
+                // Ele varre os últimos 10 lançamentos pra achar a matéria oficial
+                for(let j = 0; j < Math.min(globalData.length, 10); j++) {
+                    let materiaEstudada = globalData[j].mat.toUpperCase(); // Usa SOMENTE a matéria do dropdown, ignora o tópico livre
+                    
+                    for(let i = 0; i < cicloMaster.length; i++) {
+                        if(cicloMaster[i].chaves.some(chave => materiaEstudada.includes(chave))) {
+                            indiceAtual = i; 
+                            break;
+                        }
                     }
+                    if(indiceAtual !== -1) break; // Achou o último válido! Pode parar a viagem no tempo.
                 }
 
                 if(indiceAtual !== -1) {
@@ -476,8 +485,6 @@
             let ultimasBateriasContainer = document.getElementById('gps-ultimas-baterias');
             if(globalData.length > 0) {
                 let html = '<ul class="mission-list" style="margin-top: 10px;">';
-                
-                // Pega os 3 primeiros itens (como a globalData já foi ordenada por data decrescente acima, são os 3 mais recentes)
                 let limite = Math.min(3, globalData.length);
                 for(let i = 0; i < limite; i++) {
                     let item = globalData[i];
@@ -487,7 +494,6 @@
                     let acertos = parseFloat(String(item.rowData[7]).replace(',', '.')) || 0;
                     let pct = questoes > 0 ? ((acertos / questoes) * 100).toFixed(1) : 0;
                     
-                    // Define a cor da badge com base no desempenho
                     let corBadge = pct >= 80 ? 'var(--accent-green)' : (pct >= 70 ? 'var(--accent-orange)' : 'var(--accent-red)');
                     
                     html += `<li style="margin-bottom: 12px; border-bottom: 1px solid #444; padding-bottom: 8px;">
