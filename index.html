@@ -65,10 +65,6 @@
         .action-box.alert { border-left-color: var(--accent-red); justify-content: flex-start;}
         .action-box h4 { margin: 0 0 10px 0; font-size: 16px; color: white; display: flex; align-items: center; gap: 8px;}
         .action-box p { margin: 0; font-size: 14px; color: #AAA; line-height: 1.6; }
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #444; color: white; margin-top: 8px; text-decoration: none;}
-        .badge.warning { background: var(--accent-red); }
-        .badge.link-badge { background: var(--accent-blue); transition: 0.3s; cursor: pointer; }
-        .badge.link-badge:hover { background: #2a6bdd; transform: translateY(-2px); }
         .mission-day { font-size: 1.2em; color: var(--accent-blue); font-weight: bold; margin-bottom: 10px;}
         
         .mission-list { list-style: none; padding: 0; margin: 0; }
@@ -188,8 +184,8 @@
                 </div>
 
                 <div class="action-box">
-                    <h4><i class="fas fa-history"></i> Últimas 3 Baterias</h4>
-                    <div id="gps-ultimas-baterias">
+                    <h4><i class="fas fa-external-link-alt"></i> Último Caderno (Missão Atual)</h4>
+                    <div id="gps-ultimo-caderno" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                         <p>Aguardando Conexão...</p>
                     </div>
                 </div>
@@ -245,7 +241,8 @@
     </div>
 
     <script>
-        const GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0a4jqJIh9Mrir8W0YpzBPlfqH7G-LP7JIyp7a5eyjnhcd3pAc8GdiBe7p4gKVZ-IA_KzWNqIkLLaH/pub?gid=1981415951&single=true&output=csv"; // Cole seu link aqui novamente!
+        // COLOQUE SEU LINK AQUI
+        const GOOGLE_SHEETS_URL = "SEU_NOVO_LINK_CSV_DA_ABA_BASE_DASHBOARD_AQUI"; 
 
         function updateClock() {
             const now = new Date();
@@ -273,18 +270,23 @@
         let globalData = []; let chart1Obj, chart2Obj, chart3Obj; let currentReportMode = 'diario';
         let groupedDaily = {}; let groupedWeekly = {}; let latestTopicsMap = {}; let currentWeekStr = "";
 
-        // 1. CICLO MASTER ATUALIZADO (Usando as exatas siglas do dropdown)
+        // CICLO MASTER ATUALIZADO: Cada disciplina isolada (1 por vez)
         const cicloMaster = [
-            { id: 0, nome: "Eng: Planejamento/Orçamento + Auditoria de Obras", chaves: ["PNFL"] },
+            { id: 0, nome: "Eng: Planejamento de Obras", chaves: ["PNFL"] },
             { id: 1, nome: "AFO / Orçamento Público", chaves: ["AFO"] },
-            { id: 2, nome: "Dir. Constitucional + Controle Externo (TCE-SP)", chaves: ["DCO", "CEX"] },
-            { id: 3, nome: "Contabilidade (Pública e Geral)", chaves: ["CASP", "CTG"] },
-            { id: 4, nome: "Eng: Edificações/Estruturas + Ambiental", chaves: ["EDF"] },
-            { id: 5, nome: "Dir. Administrativo (Geral/SP) + Português", chaves: ["DAD", "POR"] },
-            { id: 6, nome: "Reforço: AFO + Contabilidade", chaves: ["AFO", "CASP", "CTG"] },
-            { id: 7, nome: "Eng: Rodoviária e Hídrica (OR/OH)", chaves: ["OR", "OH"] },
-            { id: 8, nome: "RLM + Informática", chaves: ["RLM", "INF"] }, 
-            { id: 9, nome: "Auditoria Governamental + Bateria Vunesp", chaves: ["AUDG"] }
+            { id: 2, nome: "Direito Constitucional", chaves: ["DCO"] },
+            { id: 3, nome: "Controle Externo (TCE-SP)", chaves: ["CEX"] },
+            { id: 4, nome: "Contabilidade Pública", chaves: ["CASP"] },
+            { id: 5, nome: "Contabilidade Geral", chaves: ["CTG"] },
+            { id: 6, nome: "Eng: Edificações/Estruturas", chaves: ["EDF"] },
+            { id: 7, nome: "Eng: Ambiental", chaves: ["AMB"] }, // COMANDANTE: USE AMB NO SEU FORMULÁRIO
+            { id: 8, nome: "Direito Administrativo", chaves: ["DAD"] },
+            { id: 9, nome: "Português", chaves: ["POR"] },
+            { id: 10, nome: "Eng: Rodoviária", chaves: ["OR"] },
+            { id: 11, nome: "Eng: Hídrica", chaves: ["OH"] },
+            { id: 12, nome: "Raciocínio Lógico", chaves: ["RLM"] },
+            { id: 13, nome: "Informática", chaves: ["INF"] },
+            { id: 14, nome: "Auditoria Governamental", chaves: ["AUDG"] }
         ];
 
         window.onload = function() {
@@ -446,67 +448,70 @@
                 
                 let indiceAtual = -1;
 
-                // 2. A MÁQUINA DO TEMPO (Busca inteligente)
-                // Ele varre os últimos 10 lançamentos pra achar a matéria oficial
+                // MÁQUINA DO TEMPO 
                 for(let j = 0; j < Math.min(globalData.length, 10); j++) {
-                    let materiaEstudada = globalData[j].mat.toUpperCase(); // Usa SOMENTE a matéria do dropdown, ignora o tópico livre
-                    
+                    let materiaEstudada = globalData[j].mat.toUpperCase();
                     for(let i = 0; i < cicloMaster.length; i++) {
                         if(cicloMaster[i].chaves.some(chave => materiaEstudada.includes(chave))) {
                             indiceAtual = i; 
                             break;
                         }
                     }
-                    if(indiceAtual !== -1) break; // Achou o último válido! Pode parar a viagem no tempo.
+                    if(indiceAtual !== -1) break;
                 }
 
+                let p1, p2, p3, p4;
+
                 if(indiceAtual !== -1) {
-                    let p1 = cicloMaster[(indiceAtual + 1) % cicloMaster.length].nome;
-                    let p2 = cicloMaster[(indiceAtual + 2) % cicloMaster.length].nome;
-                    let p3 = cicloMaster[(indiceAtual + 3) % cicloMaster.length].nome;
-                    let p4 = cicloMaster[(indiceAtual + 4) % cicloMaster.length].nome;
+                    p1 = cicloMaster[(indiceAtual + 1) % cicloMaster.length];
+                    p2 = cicloMaster[(indiceAtual + 2) % cicloMaster.length];
+                    p3 = cicloMaster[(indiceAtual + 3) % cicloMaster.length];
+                    p4 = cicloMaster[(indiceAtual + 4) % cicloMaster.length];
 
                     document.getElementById('mission-title').innerText = "Sequência de Fogo Atual";
                     document.getElementById('mission-title').style.color = "var(--accent-green)";
-                    document.getElementById('mission-t1').innerText = p1;
-                    document.getElementById('mission-t2').innerText = p2;
-                    document.getElementById('mission-t3').innerText = p3;
-                    document.getElementById('mission-t4').innerText = p4;
+                    document.getElementById('mission-t1').innerText = p1.nome;
+                    document.getElementById('mission-t2').innerText = p2.nome;
+                    document.getElementById('mission-t3').innerText = p3.nome;
+                    document.getElementById('mission-t4').innerText = p4.nome;
                 } else {
+                    p1 = cicloMaster[0]; p2 = cicloMaster[1]; p3 = cicloMaster[2]; p4 = cicloMaster[3];
                     document.getElementById('mission-title').innerText = "Retomar Ciclo Padrão";
                     document.getElementById('mission-title').style.color = "var(--accent-green)";
-                    document.getElementById('mission-t1').innerText = cicloMaster[0].nome;
-                    document.getElementById('mission-t2').innerText = cicloMaster[1].nome;
-                    document.getElementById('mission-t3').innerText = cicloMaster[2].nome;
-                    document.getElementById('mission-t4').innerText = cicloMaster[3].nome;
+                    document.getElementById('mission-t1').innerText = p1.nome;
+                    document.getElementById('mission-t2').innerText = p2.nome;
+                    document.getElementById('mission-t3').innerText = p3.nome;
+                    document.getElementById('mission-t4').innerText = p4.nome;
                 }
-            }
 
-            let ultimasBateriasContainer = document.getElementById('gps-ultimas-baterias');
-            if(globalData.length > 0) {
-                let html = '<ul class="mission-list" style="margin-top: 10px;">';
-                let limite = Math.min(3, globalData.length);
-                for(let i = 0; i < limite; i++) {
-                    let item = globalData[i];
-                    let dataFormatada = item.dataReal.toLocaleDateString('pt-BR');
-                    let mat = item.mat;
-                    let questoes = parseFloat(String(item.rowData[6]).replace(',', '.')) || 0;
-                    let acertos = parseFloat(String(item.rowData[7]).replace(',', '.')) || 0;
-                    let pct = questoes > 0 ? ((acertos / questoes) * 100).toFixed(1) : 0;
-                    
-                    let corBadge = pct >= 80 ? 'var(--accent-green)' : (pct >= 70 ? 'var(--accent-orange)' : 'var(--accent-red)');
-                    
-                    html += `<li style="margin-bottom: 12px; border-bottom: 1px solid #444; padding-bottom: 8px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span><strong>${mat}</strong> <span style="font-size: 12px; color: #888;">(${dataFormatada})</span></span>
-                                    <span class="badge" style="background-color: ${corBadge}; font-size: 13px;">${pct}%</span>
-                                </div>
-                             </li>`;
+                // BUSCA DO LINK DO ÚLTIMO CADERNO DA MISSÃO ATUAL
+                let linkCaderno = "";
+                let dataFormatadaCaderno = "";
+                
+                for(let i = 0; i < globalData.length; i++) {
+                    let mat = globalData[i].mat.toUpperCase();
+                    // Checa se esta linha do Sheets corresponde à matéria que ele tem que estudar AGORA (p1)
+                    if(p1.chaves.some(chave => mat.includes(chave))) {
+                        let link = globalData[i].rowData[4]; // Coluna do "Tipo de Estudo / Link" no Forms
+                        if(link && link.trim() !== "") {
+                            linkCaderno = link.trim();
+                            dataFormatadaCaderno = globalData[i].dataReal.toLocaleDateString('pt-BR');
+                            break; // Achou o mais recente, para de procurar
+                        }
+                    }
                 }
-                html += '</ul>';
-                ultimasBateriasContainer.innerHTML = html;
-            } else {
-                ultimasBateriasContainer.innerHTML = '<p>Nenhum dado encontrado.</p>';
+
+                let containerLink = document.getElementById('gps-ultimo-caderno');
+                if(linkCaderno) {
+                    if(linkCaderno.startsWith("http")) {
+                        containerLink.innerHTML = `<a href="${linkCaderno}" target="_blank" class="btn" style="width: 100%; justify-content: center; background-color: var(--accent-orange); color: black;"><i class="fas fa-external-link-alt"></i> Retomar Caderno (${dataFormatadaCaderno})</a>`;
+                    } else {
+                        // Se o usuário digitou texto em vez de link
+                        containerLink.innerHTML = `<p style="color: var(--accent-orange); font-weight: bold; text-align: center;">${linkCaderno}</p><span style="font-size: 12px; color: #888;">Último acesso: ${dataFormatadaCaderno}</span>`;
+                    }
+                } else {
+                    containerLink.innerHTML = `<p style="font-size: 13px; color: #888; text-align: center;">Nenhum link recente salvo para <strong>${p1.nome}</strong> na planilha.</p>`;
+                }
             }
         }
 
