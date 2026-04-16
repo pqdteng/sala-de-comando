@@ -241,7 +241,7 @@
     </div>
 
     <script>
-        // COLOQUE SEU LINK AQUI
+        // COLOQUE SEU LINK DO GOOGLE SHEETS AQUI DENTRO DAS ASPAS
         const GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0a4jqJIh9Mrir8W0YpzBPlfqH7G-LP7JIyp7a5eyjnhcd3pAc8GdiBe7p4gKVZ-IA_KzWNqIkLLaH/pub?gid=1981415951&single=true&output=csv"; 
 
         function updateClock() {
@@ -270,7 +270,6 @@
         let globalData = []; let chart1Obj, chart2Obj, chart3Obj; let currentReportMode = 'diario';
         let groupedDaily = {}; let groupedWeekly = {}; let latestTopicsMap = {}; let currentWeekStr = "";
 
-        // CICLO MASTER ATUALIZADO: Cada disciplina isolada (1 por vez)
         const cicloMaster = [
             { id: 0, nome: "Eng: Planejamento de Obras", chaves: ["PNFL"] },
             { id: 1, nome: "AFO / Orçamento Público", chaves: ["AFO"] },
@@ -279,7 +278,7 @@
             { id: 4, nome: "Contabilidade Pública", chaves: ["CASP"] },
             { id: 5, nome: "Contabilidade Geral", chaves: ["CTG"] },
             { id: 6, nome: "Eng: Edificações/Estruturas", chaves: ["EDF"] },
-            { id: 7, nome: "Eng: Ambiental", chaves: ["AMB"] }, // COMANDANTE: USE AMB NO SEU FORMULÁRIO
+            { id: 7, nome: "Eng: Ambiental", chaves: ["AMB"] }, 
             { id: 8, nome: "Direito Administrativo", chaves: ["DAD"] },
             { id: 9, nome: "Português", chaves: ["POR"] },
             { id: 10, nome: "Eng: Rodoviária", chaves: ["OR"] },
@@ -307,25 +306,34 @@
             if(globalData.length > 0) updateGPS(); 
         }
 
+        // FUNÇÃO CORRIGIDA: Agora lê as horas, minutos e segundos perfeitamente!
         function parseExcelDate(val) {
             if (!val) return new Date(); 
             if (val instanceof Date) return val;
             if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
             
-            let strVal = String(val).trim().split(' ')[0]; 
+            let strVal = String(val).trim();
+            let partsSpace = strVal.split(' ');
+            let datePart = partsSpace[0];
+            let timePart = partsSpace.length > 1 ? partsSpace[1] : '00:00:00';
             
-            if (strVal.includes('/') || strVal.includes('-')) {
-                let separador = strVal.includes('/') ? '/' : '-';
-                let parts = strVal.split(separador);
+            if (datePart.includes('/') || datePart.includes('-')) {
+                let separador = datePart.includes('/') ? '/' : '-';
+                let dParts = datePart.split(separador);
+                let tParts = timePart.split(':');
                 
-                if(parts.length === 3) {
-                    if (parts[2].length === 4 || parts[2].length === 2) {
-                        let year = parseInt(parts[2], 10);
+                let h = parseInt(tParts[0], 10) || 0;
+                let m = parseInt(tParts[1], 10) || 0;
+                let s = parseInt(tParts[2], 10) || 0;
+                
+                if(dParts.length === 3) {
+                    if (dParts[2].length === 4 || dParts[2].length === 2) {
+                        let year = parseInt(dParts[2], 10);
                         if (year < 100) year += 2000;
-                        return new Date(year, parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                        return new Date(year, parseInt(dParts[1], 10) - 1, parseInt(dParts[0], 10), h, m, s);
                     }
-                    else if (parts[0].length === 4) {
-                        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                    else if (dParts[0].length === 4) {
+                        return new Date(parseInt(dParts[0], 10), parseInt(dParts[1], 10) - 1, parseInt(dParts[2], 10), h, m, s);
                     }
                 }
             }
@@ -395,7 +403,8 @@
                     let accPct = (acertos / questoes);
 
                     uniqueSubjects.add(mat);
-                    globalData.push({ rowData: row, dataReal: dateObj, mat: mat, topico: topico });
+                    // O Segredo 2: Salvar o índice original da linha (i) para desempate
+                    globalData.push({ rowData: row, dataReal: dateObj, mat: mat, topico: topico, originalIndex: i });
 
                     let dayKey = dateObj.toLocaleDateString('pt-BR');
                     let weekKey = getWeekNumber(dateObj);
@@ -415,6 +424,13 @@
                     }
                 }
             }
+
+            // O Segredo 1 e 2 combinados: Ordena considerando hora/minuto/segundo e usa a linha como desempate final
+            globalData.sort((a, b) => {
+                let diff = b.dataReal.getTime() - a.dataReal.getTime();
+                if (diff !== 0) return diff;
+                return b.originalIndex - a.originalIndex;
+            });
 
             let filter = document.getElementById('subjectFilter');
             filter.innerHTML = '<option value="all">Visão Geral (Todas as Disciplinas)</option>';
@@ -444,8 +460,6 @@
             document.getElementById('lbl-q-feito').innerText = qFeitas; document.getElementById('lbl-q-pct').innerText = pctQ + '%'; document.getElementById('bar-q').style.width = pctQ + '%';
 
             if(globalData.length > 0) {
-                globalData.sort((a, b) => b.dataReal - a.dataReal);
-                
                 let indiceAtual = -1;
 
                 // MÁQUINA DO TEMPO 
@@ -490,13 +504,12 @@
                 
                 for(let i = 0; i < globalData.length; i++) {
                     let mat = globalData[i].mat.toUpperCase();
-                    // Checa se esta linha do Sheets corresponde à matéria que ele tem que estudar AGORA (p1)
                     if(p1.chaves.some(chave => mat.includes(chave))) {
-                        let link = globalData[i].rowData[4]; // Coluna do "Tipo de Estudo / Link" no Forms
+                        let link = globalData[i].rowData[4]; 
                         if(link && link.trim() !== "") {
                             linkCaderno = link.trim();
                             dataFormatadaCaderno = globalData[i].dataReal.toLocaleDateString('pt-BR');
-                            break; // Achou o mais recente, para de procurar
+                            break; 
                         }
                     }
                 }
@@ -506,7 +519,6 @@
                     if(linkCaderno.startsWith("http")) {
                         containerLink.innerHTML = `<a href="${linkCaderno}" target="_blank" class="btn" style="width: 100%; justify-content: center; background-color: var(--accent-orange); color: black;"><i class="fas fa-external-link-alt"></i> Retomar Caderno (${dataFormatadaCaderno})</a>`;
                     } else {
-                        // Se o usuário digitou texto em vez de link
                         containerLink.innerHTML = `<p style="color: var(--accent-orange); font-weight: bold; text-align: center;">${linkCaderno}</p><span style="font-size: 12px; color: #888;">Último acesso: ${dataFormatadaCaderno}</span>`;
                     }
                 } else {
