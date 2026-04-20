@@ -143,10 +143,6 @@
                 <button onclick="pauseTimer()" title="Pausar"><i class="fas fa-pause"></i></button>
                 <button class="stop-btn" onclick="resetTimer()" title="Zerar"><i class="fas fa-stop"></i></button>
             </div>
-            <div style="margin-top: 15px; display: flex; gap: 5px;">
-                <input type="text" id="sync-code" placeholder="Código Sync" style="background: #222; border: 1px solid #444; color: var(--accent-orange); padding: 5px; border-radius: 4px; width: 140px; text-align: center; font-family: monospace; font-weight: bold;">
-                <button onclick="syncTimer()" class="badge link-badge" style="border:none; cursor:pointer;"><i class="fas fa-link"></i> Set</button>
-            </div>
         </div>
 
     </div>
@@ -246,7 +242,7 @@
 
     <script>
         // COLOQUE SEU LINK DO GOOGLE SHEETS AQUI DENTRO DAS ASPAS
-        const GOOGLE_SHEETS_URL = "SEU_NOVO_LINK_CSV_DA_ABA_BASE_DASHBOARD_AQUI"; 
+        const GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0a4jqJIh9Mrir8W0YpzBPlfqH7G-LP7JIyp7a5eyjnhcd3pAc8GdiBe7p4gKVZ-IA_KzWNqIkLLaH/pub?gid=1981415951&single=true&output=csv"; 
 
         function updateClock() {
             const now = new Date();
@@ -270,26 +266,10 @@
         function pauseTimer() { isTimerRunning = false; clearInterval(timerInterval); }
         function resetTimer() { pauseTimer(); timerSeconds = 0; updateTimerDisplay(); }
 
-        // NOVA FUNÇÃO DE SINCRONIZAÇÃO
-        function syncTimer() {
-            let codeInput = document.getElementById('sync-code');
-            let code = codeInput.value.trim();
-            if(code && !isNaN(code)) {
-                timerSeconds = parseInt(code);
-                updateTimerDisplay();
-                codeInput.value = "";
-                alert("COMANDANTE: Cronômetro sincronizado com sucesso!");
-            } else {
-                codeInput.value = timerSeconds;
-                alert("Código Gerado! Copie o número acima e cole no seu outro dispositivo para continuar o tempo.");
-            }
-        }
-
         Chart.defaults.color = '#E0E0E0'; Chart.defaults.borderColor = '#333';
         let globalData = []; let chart1Obj, chart2Obj, chart3Obj; let currentReportMode = 'diario';
         let groupedDaily = {}; let groupedWeekly = {}; let latestTopicsMap = {}; let currentWeekStr = "";
 
-        // CICLO MASTER ATUALIZADO: Com as Peças Técnicas e Redações
         const cicloMaster = [
             { id: 0, nome: "Eng: Planejamento de Obras", chaves: ["PNFL"] },
             { id: 1, nome: "AFO / Orçamento Público", chaves: ["AFO"] },
@@ -305,9 +285,7 @@
             { id: 11, nome: "Eng: Hídrica", chaves: ["OH"] },
             { id: 12, nome: "Raciocínio Lógico", chaves: ["RLM"] },
             { id: 13, nome: "Informática", chaves: ["INF"] },
-            { id: 14, nome: "Auditoria Governamental", chaves: ["AUDG"] },
-            { id: 15, nome: "Treino: Peça Técnica (Engenharia)", chaves: ["PEÇA", "DISCURSIVA", "PARECER"] },
-            { id: 16, nome: "Treino: Redação (Vunesp)", chaves: ["RED", "REDAÇÃO"] }
+            { id: 14, nome: "Auditoria Governamental", chaves: ["AUDG"] }
         ];
 
         window.onload = function() {
@@ -315,7 +293,7 @@
             if(localStorage.getItem('metaQ')) document.getElementById('meta-q').value = localStorage.getItem('metaQ');
             updateTimerDisplay();
             
-            if (GOOGLE_SHEETS_URL !== https://docs.google.com/spreadsheets/d/e/2PACX-1vS0a4jqJIh9Mrir8W0YpzBPlfqH7G-LP7JIyp7a5eyjnhcd3pAc8GdiBe7p4gKVZ-IA_KzWNqIkLLaH/pub?gid=1981415951&single=true&output=csv") {
+            if (GOOGLE_SHEETS_URL !== "SEU_NOVO_LINK_CSV_DA_ABA_BASE_DASHBOARD_AQUI") {
                 setTimeout(loadGoogleSheetsData, 500); 
             } else {
                 alert("COMANDANTE: Lembre-se de colar o novo link CSV da aba Base_Dashboard no código HTML!");
@@ -328,7 +306,7 @@
             if(globalData.length > 0) updateGPS(); 
         }
 
-        // FUNÇÃO CORRIGIDA MODO BLINDADO: Lê o tempo exato para não bugar a máquina do tempo
+        // FUNÇÃO CORRIGIDA: Agora lê as horas, minutos e segundos perfeitamente!
         function parseExcelDate(val) {
             if (!val) return new Date(); 
             if (val instanceof Date) return val;
@@ -416,10 +394,7 @@
                 let questoes = parseFloat(strQ) || 0;
                 
                 if(questoes > 0) {
-                    // PULO DO GATO AQUI: Lemos a Coluna A (Timestamp real) para a organização temporal cravada
-                    let dataDoEstudo = parseExcelDate(row[1]); // Para a exibição nos gráficos
-                    let carimboExato = parseExcelDate(row[0]); // Para a máquina do tempo
-                    
+                    let dateObj = parseExcelDate(row[1]); 
                     let mat = row[2] ? String(row[2]).trim() : 'Sem Matéria'; 
                     let topico = row[3] ? String(row[3]).trim() : 'Sem Tópico'; 
                     let tipoEstudo = row[4] ? String(row[4]).trim() : ''; 
@@ -428,13 +403,13 @@
                     let accPct = (acertos / questoes);
 
                     uniqueSubjects.add(mat);
-                    
-                    globalData.push({ rowData: row, dataReal: dataDoEstudo, tempoCronologico: carimboExato, mat: mat, topico: topico, originalIndex: i });
+                    // O Segredo 2: Salvar o índice original da linha (i) para desempate
+                    globalData.push({ rowData: row, dataReal: dateObj, mat: mat, topico: topico, originalIndex: i });
 
-                    let dayKey = dataDoEstudo.toLocaleDateString('pt-BR');
-                    let weekKey = getWeekNumber(dataDoEstudo);
+                    let dayKey = dateObj.toLocaleDateString('pt-BR');
+                    let weekKey = getWeekNumber(dateObj);
 
-                    if(!groupedDaily[dayKey]) groupedDaily[dayKey] = { q: 0, a: 0, t: 0, dateObj: dataDoEstudo, subjects: {} };
+                    if(!groupedDaily[dayKey]) groupedDaily[dayKey] = { q: 0, a: 0, t: 0, dateObj: dateObj, subjects: {} };
                     groupedDaily[dayKey].q += questoes; groupedDaily[dayKey].a += acertos; groupedDaily[dayKey].t += tempo;
                     if(!groupedDaily[dayKey].subjects[mat]) groupedDaily[dayKey].subjects[mat] = {q: 0, a: 0};
                     groupedDaily[dayKey].subjects[mat].q += questoes; groupedDaily[dayKey].subjects[mat].a += acertos;
@@ -444,15 +419,15 @@
                     if(!groupedWeekly[weekKey].subjects[mat]) groupedWeekly[weekKey].subjects[mat] = {q: 0, a: 0};
                     groupedWeekly[weekKey].subjects[mat].q += questoes; groupedWeekly[weekKey].subjects[mat].a += acertos;
 
-                    if(!latestTopicsMap[topico] || carimboExato > latestTopicsMap[topico].date) {
-                        latestTopicsMap[topico] = { date: carimboExato, mat: mat, tipo: tipoEstudo, acc: accPct };
+                    if(!latestTopicsMap[topico] || dateObj > latestTopicsMap[topico].date) {
+                        latestTopicsMap[topico] = { date: dateObj, mat: mat, tipo: tipoEstudo, acc: accPct };
                     }
                 }
             }
 
-            // Organiza com precisão absoluta de segundos usando a Coluna A
+            // O Segredo 1 e 2 combinados: Ordena considerando hora/minuto/segundo e usa a linha como desempate final
             globalData.sort((a, b) => {
-                let diff = b.tempoCronologico.getTime() - a.tempoCronologico.getTime();
+                let diff = b.dataReal.getTime() - a.dataReal.getTime();
                 if (diff !== 0) return diff;
                 return b.originalIndex - a.originalIndex;
             });
