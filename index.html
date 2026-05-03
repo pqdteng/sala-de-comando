@@ -96,6 +96,7 @@
         .toggle-report { display: flex; gap: 10px; }
         .toggle-btn { background-color: #333; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .toggle-btn.active { background-color: var(--accent-purple); }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; color: #E0E0E0; text-align: left; }
         th, td { padding: 12px; border-bottom: 1px solid #444; }
         th { background-color: #2A2A2A; color: var(--accent-orange); }
@@ -104,10 +105,22 @@
         .bad-acc { color: var(--accent-red); font-weight: bold; }
         .details-link { color: var(--accent-blue); text-decoration: none; cursor: pointer; font-weight: bold; }
         
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); }
-        .modal-content { background-color: var(--card-bg); margin: 5% auto; padding: 25px; border: 1px solid #444; width: 90%; max-width: 600px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        /* ATUALIZAÇÕES DO NOVO MODAL - MODO REDE SOCIAL */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); overflow-y: auto;}
+        .modal-content { background-color: var(--card-bg); margin: 5% auto; padding: 25px; border: 1px solid #444; width: 90%; max-width: 750px; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.8); }
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 20px;}
         .close-btn:hover { color: white; }
+        
+        .modal-header-social { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px;}
+        .modal-header-social h3 { margin: 0; color: var(--accent-orange); font-size: 1.5em; display: flex; align-items: center; gap: 10px;}
+        
+        .modal-kpi-container { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;}
+        .modal-kpi-box { background: #2A2A2A; padding: 15px; border-radius: 8px; flex: 1; text-align: center; border-bottom: 3px solid var(--accent-blue); min-width: 120px;}
+        .modal-kpi-box h4 { margin: 0 0 5px 0; color: #AAA; font-size: 12px; text-transform: uppercase;}
+        .modal-kpi-box p { margin: 0; color: white; font-size: 24px; font-weight: bold;}
+        
+        .modal-chart-area { display: flex; justify-content: center; align-items: center; background: #252525; border-radius: 12px; padding: 20px; margin-bottom: 25px; height: 280px;}
+        .modal-table-area { overflow-x: auto; }
     </style>
 </head>
 <body>
@@ -229,14 +242,39 @@
         </div>
     </div>
 
+    <!-- NOVO MODAL - MODO REDE SOCIAL -->
     <div id="detailsModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h3 id="modalTitle">Disciplinas Estudadas</h3>
-            <table id="modalTable">
-                <thead><tr><th>Matéria</th><th>Questões</th><th>Acertos</th><th>% Acerto</th></tr></thead>
-                <tbody id="modalBody"></tbody>
-            </table>
+            <div class="modal-header-social">
+                <h3 id="modalTitle"><i class="fas fa-camera-retro"></i> Raio-X do Ciclo</h3>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            
+            <div class="modal-kpi-container">
+                <div class="modal-kpi-box" style="border-bottom-color: var(--accent-orange);">
+                    <h4>Total de Horas</h4>
+                    <p id="m-kpi-hrs">0.0h</p>
+                </div>
+                <div class="modal-kpi-box" style="border-bottom-color: var(--accent-blue);">
+                    <h4>Questões Realizadas</h4>
+                    <p id="m-kpi-q">0</p>
+                </div>
+                <div class="modal-kpi-box" style="border-bottom-color: var(--accent-green);">
+                    <h4>Precisão Geral</h4>
+                    <p id="m-kpi-acc">0%</p>
+                </div>
+            </div>
+
+            <div class="modal-chart-area">
+                <canvas id="modalChartPie"></canvas>
+            </div>
+
+            <div class="modal-table-area">
+                <table id="modalTable">
+                    <thead><tr><th>Matéria</th><th>Tempo (h)</th><th>Questões</th><th>Acertos</th><th>% Acerto</th></tr></thead>
+                    <tbody id="modalBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -267,7 +305,7 @@
         function resetTimer() { pauseTimer(); timerSeconds = 0; updateTimerDisplay(); }
 
         Chart.defaults.color = '#E0E0E0'; Chart.defaults.borderColor = '#333';
-        let globalData = []; let chart1Obj, chart2Obj, chart3Obj; let currentReportMode = 'diario';
+        let globalData = []; let chart1Obj, chart2Obj, chart3Obj, modalPieChartObj; let currentReportMode = 'diario';
         let groupedDaily = {}; let groupedWeekly = {}; let latestTopicsMap = {}; let currentWeekStr = "";
 
         const cicloMaster = [
@@ -308,7 +346,6 @@
             if(globalData.length > 0) updateGPS(); 
         }
 
-        // FUNÇÃO CORRIGIDA: Agora lê as horas, minutos e segundos perfeitamente!
         function parseExcelDate(val) {
             if (!val) return new Date(); 
             if (val instanceof Date) return val;
@@ -339,7 +376,6 @@
                     }
                 }
             }
-            
             let fallbackDate = new Date(val);
             if (!isNaN(fallbackDate.getTime())) return fallbackDate;
             return new Date(); 
@@ -358,7 +394,9 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...';
             btn.style.backgroundColor = "var(--accent-orange)";
 
-            Papa.parse(GOOGLE_SHEETS_URL, {
+            let noCacheUrl = GOOGLE_SHEETS_URL + (GOOGLE_SHEETS_URL.includes('?') ? '&' : '?') + 'nocache=' + new Date().getTime();
+
+            Papa.parse(noCacheUrl, {
                 download: true,
                 header: false,
                 skipEmptyLines: true,
@@ -395,31 +433,31 @@
 
                 let questoes = parseFloat(strQ) || 0;
                 
-                if(questoes > 0) {
-                    let dateObj = parseExcelDate(row[1]); 
+                if(questoes > 0 || parseFloat(strTempo) > 0) {
+                    let dateObj = parseExcelDate(row[0]); 
                     let mat = row[2] ? String(row[2]).trim() : 'Sem Matéria'; 
                     let topico = row[3] ? String(row[3]).trim() : 'Sem Tópico'; 
                     let tipoEstudo = row[4] ? String(row[4]).trim() : ''; 
                     let acertos = parseFloat(strA) || 0;
                     let tempo = parseFloat(strTempo) || 0;
-                    let accPct = (acertos / questoes);
+                    let accPct = questoes > 0 ? (acertos / questoes) : 0;
 
                     uniqueSubjects.add(mat);
-                    // O Segredo 2: Salvar o índice original da linha (i) para desempate
                     globalData.push({ rowData: row, dataReal: dateObj, mat: mat, topico: topico, originalIndex: i });
 
                     let dayKey = dateObj.toLocaleDateString('pt-BR');
                     let weekKey = getWeekNumber(dateObj);
 
+                    // ATENÇÃO: Agora armazenamos também o 't' (tempo) individual na aba subjects!
                     if(!groupedDaily[dayKey]) groupedDaily[dayKey] = { q: 0, a: 0, t: 0, dateObj: dateObj, subjects: {} };
                     groupedDaily[dayKey].q += questoes; groupedDaily[dayKey].a += acertos; groupedDaily[dayKey].t += tempo;
-                    if(!groupedDaily[dayKey].subjects[mat]) groupedDaily[dayKey].subjects[mat] = {q: 0, a: 0};
-                    groupedDaily[dayKey].subjects[mat].q += questoes; groupedDaily[dayKey].subjects[mat].a += acertos;
+                    if(!groupedDaily[dayKey].subjects[mat]) groupedDaily[dayKey].subjects[mat] = {q: 0, a: 0, t: 0};
+                    groupedDaily[dayKey].subjects[mat].q += questoes; groupedDaily[dayKey].subjects[mat].a += acertos; groupedDaily[dayKey].subjects[mat].t += tempo;
 
                     if(!groupedWeekly[weekKey]) groupedWeekly[weekKey] = { q: 0, a: 0, t: 0, weekStr: weekKey, subjects: {} };
                     groupedWeekly[weekKey].q += questoes; groupedWeekly[weekKey].a += acertos; groupedWeekly[weekKey].t += tempo;
-                    if(!groupedWeekly[weekKey].subjects[mat]) groupedWeekly[weekKey].subjects[mat] = {q: 0, a: 0};
-                    groupedWeekly[weekKey].subjects[mat].q += questoes; groupedWeekly[weekKey].subjects[mat].a += acertos;
+                    if(!groupedWeekly[weekKey].subjects[mat]) groupedWeekly[weekKey].subjects[mat] = {q: 0, a: 0, t: 0};
+                    groupedWeekly[weekKey].subjects[mat].q += questoes; groupedWeekly[weekKey].subjects[mat].a += acertos; groupedWeekly[weekKey].subjects[mat].t += tempo;
 
                     if(!latestTopicsMap[topico] || dateObj > latestTopicsMap[topico].date) {
                         latestTopicsMap[topico] = { date: dateObj, mat: mat, tipo: tipoEstudo, acc: accPct };
@@ -427,7 +465,6 @@
                 }
             }
 
-            // O Segredo 1 e 2 combinados: Ordena considerando hora/minuto/segundo e usa a linha como desempate final
             globalData.sort((a, b) => {
                 let diff = b.dataReal.getTime() - a.dataReal.getTime();
                 if (diff !== 0) return diff;
@@ -464,7 +501,6 @@
             if(globalData.length > 0) {
                 let indiceAtual = -1;
 
-                // MÁQUINA DO TEMPO 
                 for(let j = 0; j < Math.min(globalData.length, 10); j++) {
                     let materiaEstudada = globalData[j].mat.toUpperCase();
                     for(let i = 0; i < cicloMaster.length; i++) {
@@ -500,7 +536,6 @@
                     document.getElementById('mission-t4').innerText = p4.nome;
                 }
 
-                // BUSCA DO LINK DO ÚLTIMO CADERNO DA MISSÃO ATUAL
                 let linkCaderno = "";
                 let dataFormatadaCaderno = "";
                 
@@ -531,9 +566,120 @@
 
         document.getElementById('subjectFilter').addEventListener('change', function(e) { updateDashboard(e.target.value); document.getElementById('title-text').innerText = e.target.options[e.target.selectedIndex].text; });
         function switchReport(mode) { currentReportMode = mode; document.getElementById('btnDiario').classList.remove('active'); document.getElementById('btnSemanal').classList.remove('active'); if(mode === 'diario') document.getElementById('btnDiario').classList.add('active'); else document.getElementById('btnSemanal').classList.add('active'); renderReport(); }
-        function renderReport() { let tbody = document.getElementById('report-body'); let colPeriodo = document.getElementById('col-periodo'); tbody.innerHTML = ''; let dataArray = []; if (currentReportMode === 'diario') { colPeriodo.innerText = 'Data do Estudo'; dataArray = Object.keys(groupedDaily).map(k => { return { key: k, sortDate: groupedDaily[k].dateObj, ...groupedDaily[k] }; }); dataArray.sort((a, b) => b.sortDate - a.sortDate); } else { colPeriodo.innerText = 'Semana do Ano'; dataArray = Object.keys(groupedWeekly).map(k => { return { key: k, ...groupedWeekly[k] }; }); dataArray.sort((a, b) => b.key.localeCompare(a.key)); } dataArray.forEach(row => { let acc = ((row.a / row.q) * 100).toFixed(1); let accClass = acc >= 75 ? 'good-acc' : 'bad-acc'; let horas = (row.t / 60).toFixed(1); let vel = row.t > 0 ? ((row.q / row.t) * 60).toFixed(0) : 0; let tr = document.createElement('tr'); tr.innerHTML = `<td><strong>${row.key}</strong></td><td>${row.q}</td><td>${row.a}</td><td class="${accClass}">${acc}%</td><td>${horas}h</td><td>${vel} Q/h</td><td><a class="details-link" onclick="openDetailsModal('${row.key}')"><i class="fas fa-eye"></i> Ver</a></td>`; tbody.appendChild(tr); }); }
-        function openDetailsModal(key) { let data = currentReportMode === 'diario' ? groupedDaily[key] : groupedWeekly[key]; if(!data) return; document.getElementById('modalTitle').innerText = 'Raio-X de Disciplinas: ' + key; let tbody = document.getElementById('modalBody'); tbody.innerHTML = ''; let subjectsSorted = Object.keys(data.subjects).sort(); subjectsSorted.forEach(mat => { let s = data.subjects[mat]; let acc = ((s.a / s.q) * 100).toFixed(1); let accClass = acc >= 75 ? 'good-acc' : 'bad-acc'; let tr = document.createElement('tr'); tr.innerHTML = `<td>${mat}</td><td>${s.q}</td><td>${s.a}</td><td class="${accClass}">${acc}%</td>`; tbody.appendChild(tr); }); document.getElementById('detailsModal').style.display = 'block'; }
-        function closeModal() { document.getElementById('detailsModal').style.display = 'none'; } window.onclick = function(e) { let modal = document.getElementById('detailsModal'); if (e.target == modal) { modal.style.display = "none"; } }
+        
+        function renderReport() { 
+            let tbody = document.getElementById('report-body'); 
+            let colPeriodo = document.getElementById('col-periodo'); 
+            tbody.innerHTML = ''; 
+            let dataArray = []; 
+            if (currentReportMode === 'diario') { 
+                colPeriodo.innerText = 'Data do Estudo'; 
+                dataArray = Object.keys(groupedDaily).map(k => { return { key: k, sortDate: groupedDaily[k].dateObj, ...groupedDaily[k] }; }); 
+                dataArray.sort((a, b) => b.sortDate - a.sortDate); 
+            } else { 
+                colPeriodo.innerText = 'Semana do Ano'; 
+                dataArray = Object.keys(groupedWeekly).map(k => { return { key: k, ...groupedWeekly[k] }; }); 
+                dataArray.sort((a, b) => b.key.localeCompare(a.key)); 
+            } 
+            dataArray.forEach(row => { 
+                let acc = row.q > 0 ? ((row.a / row.q) * 100).toFixed(1) : 0; 
+                let accClass = acc >= 75 ? 'good-acc' : 'bad-acc'; 
+                let horas = (row.t / 60).toFixed(1); 
+                let vel = row.t > 0 ? ((row.q / row.t) * 60).toFixed(0) : 0; 
+                let tr = document.createElement('tr'); 
+                tr.innerHTML = `<td><strong>${row.key}</strong></td><td>${row.q}</td><td>${row.a}</td><td class="${accClass}">${acc}%</td><td>${horas}h</td><td>${vel} Q/h</td><td><a class="details-link" onclick="openDetailsModal('${row.key}')"><i class="fas fa-camera"></i> Print</a></td>`; 
+                tbody.appendChild(tr); 
+            }); 
+        }
+
+        // --- NOVA FUNÇÃO DO MODAL (MODO REDE SOCIAL) ---
+        function openDetailsModal(key) { 
+            let data = currentReportMode === 'diario' ? groupedDaily[key] : groupedWeekly[key]; 
+            if(!data) return; 
+            
+            document.getElementById('modalTitle').innerHTML = `<i class="fas fa-camera-retro"></i> Raio-X do Ciclo: ${key}`; 
+            
+            // Calcula e preenche os KPIs superiores do Modal
+            let totalHrs = (data.t / 60).toFixed(1);
+            let precisaoGeral = data.q > 0 ? ((data.a / data.q) * 100).toFixed(1) : 0;
+            
+            document.getElementById('m-kpi-hrs').innerText = totalHrs + 'h';
+            document.getElementById('m-kpi-q').innerText = data.q;
+            document.getElementById('m-kpi-acc').innerText = precisaoGeral + '%';
+
+            let tbody = document.getElementById('modalBody'); 
+            tbody.innerHTML = ''; 
+            
+            // Ordena as disciplinas por quantidade de tempo estudado (maior para menor)
+            let subjectsSorted = Object.keys(data.subjects).sort((a, b) => data.subjects[b].t - data.subjects[a].t); 
+            
+            let chartLabels = [];
+            let chartData = [];
+            // Paleta de cores moderna e atrativa para a Pizza
+            let chartColors = ['#3A86FF', '#FFBE0B', '#38B000', '#8338EC', '#FF006E', '#00B4D8', '#FB5607', '#E0E0E0', '#7209B7', '#4CC9F0'];
+
+            subjectsSorted.forEach((mat, index) => { 
+                let s = data.subjects[mat]; 
+                let acc = s.q > 0 ? ((s.a / s.q) * 100).toFixed(1) : 0; 
+                let accClass = acc >= 75 ? 'good-acc' : 'bad-acc'; 
+                let horasDisciplina = (s.t / 60).toFixed(1);
+                
+                // Popula os dados do gráfico
+                chartLabels.push(mat);
+                // Utiliza Horas como métrica base da Pizza. Se for 0 (estudo só de flashcards rápido), usa as questões para a fatia não sumir.
+                chartData.push(s.t > 0 ? horasDisciplina : s.q);
+
+                // Popula a tabela detalhada do Modal
+                let tr = document.createElement('tr'); 
+                tr.innerHTML = `<td>${mat}</td><td><strong>${horasDisciplina}h</strong></td><td>${s.q}</td><td>${s.a}</td><td class="${accClass}">${acc}%</td>`; 
+                tbody.appendChild(tr); 
+            }); 
+            
+            document.getElementById('detailsModal').style.display = "block"; 
+
+            // Renderiza o Gráfico de Pizza
+            if(modalPieChartObj) modalPieChartObj.destroy();
+            
+            const ctxM = document.getElementById('modalChartPie').getContext('2d');
+            modalPieChartObj = new Chart(ctxM, {
+                type: 'doughnut',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: chartColors.slice(0, chartLabels.length),
+                        borderColor: '#252525', // Cor de fundo do chart-area para separar as fatias
+                        borderWidth: 3,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#E0E0E0',
+                                padding: 20,
+                                font: { size: 12, family: "'Segoe UI', sans-serif" }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw} ` + (data.subjects[context.label].t > 0 ? 'Horas' : 'Questões');
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%' // Furo no meio para visual moderno
+                }
+            });
+        }
+        
+        function closeModal() { document.getElementById('detailsModal').style.display = 'none'; } 
+        window.onclick = function(e) { let modal = document.getElementById('detailsModal'); if (e.target == modal) { modal.style.display = "none"; } }
         
         function updateDashboard(subjectFilter) { 
             let filteredData = subjectFilter !== 'all' ? globalData.filter(item => String(item.rowData[2]).trim() === subjectFilter) : globalData; 
