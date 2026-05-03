@@ -105,7 +105,6 @@
         .bad-acc { color: var(--accent-red); font-weight: bold; }
         .details-link { color: var(--accent-blue); text-decoration: none; cursor: pointer; font-weight: bold; }
         
-        /* ATUALIZAÇÕES DO NOVO MODAL - MODO REDE SOCIAL */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); overflow-y: auto;}
         .modal-content { background-color: var(--card-bg); margin: 5% auto; padding: 25px; border: 1px solid #444; width: 90%; max-width: 750px; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.8); }
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 20px;}
@@ -242,7 +241,6 @@
         </div>
     </div>
 
-    <!-- NOVO MODAL - MODO REDE SOCIAL -->
     <div id="detailsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header-social">
@@ -346,25 +344,26 @@
             if(globalData.length > 0) updateGPS(); 
         }
 
-        function parseExcelDate(val) {
-            if (!val) return new Date(); 
-            if (val instanceof Date) return val;
-            if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-            
-            let strVal = String(val).trim();
-            let partsSpace = strVal.split(' ');
-            let datePart = partsSpace[0];
-            let timePart = partsSpace.length > 1 ? partsSpace[1] : '00:00:00';
-            
-            if (datePart.includes('/') || datePart.includes('-')) {
-                let separador = datePart.includes('/') ? '/' : '-';
-                let dParts = datePart.split(separador);
+        // REDUNDÂNCIA ESTRUTURAL: Lê a Data Segura da Coluna B, e "rouba" a hora da Coluna A (se existir)
+        function parseExcelDate(valDate, valTime) {
+            let strVal = valDate ? String(valDate).trim() : '';
+            if (!strVal) return new Date();
+
+            let timePart = '00:00:00';
+            if (valTime && String(valTime).includes(':')) {
+                let parts = String(valTime).trim().split(' ');
+                timePart = parts.length > 1 ? parts[1] : (parts[0].includes(':') ? parts[0] : '00:00:00');
+            }
+
+            if (strVal.includes('/') || strVal.includes('-')) {
+                let separador = strVal.includes('/') ? '/' : '-';
+                let dParts = strVal.split(separador);
                 let tParts = timePart.split(':');
-                
+
                 let h = parseInt(tParts[0], 10) || 0;
                 let m = parseInt(tParts[1], 10) || 0;
                 let s = parseInt(tParts[2], 10) || 0;
-                
+
                 if(dParts.length === 3) {
                     if (dParts[2].length === 4 || dParts[2].length === 2) {
                         let year = parseInt(dParts[2], 10);
@@ -376,7 +375,7 @@
                     }
                 }
             }
-            let fallbackDate = new Date(val);
+            let fallbackDate = new Date(valDate);
             if (!isNaN(fallbackDate.getTime())) return fallbackDate;
             return new Date(); 
         }
@@ -434,7 +433,9 @@
                 let questoes = parseFloat(strQ) || 0;
                 
                 if(questoes > 0 || parseFloat(strTempo) > 0) {
-                    let dateObj = parseExcelDate(row[0]); 
+                    // A MÁGICA ACONTECE AQUI: row[1] é a Data Principal, row[0] é usado apenas para extrair as Horas!
+                    let dateObj = parseExcelDate(row[1], row[0]); 
+                    
                     let mat = row[2] ? String(row[2]).trim() : 'Sem Matéria'; 
                     let topico = row[3] ? String(row[3]).trim() : 'Sem Tópico'; 
                     let tipoEstudo = row[4] ? String(row[4]).trim() : ''; 
@@ -448,7 +449,6 @@
                     let dayKey = dateObj.toLocaleDateString('pt-BR');
                     let weekKey = getWeekNumber(dateObj);
 
-                    // ATENÇÃO: Agora armazenamos também o 't' (tempo) individual na aba subjects!
                     if(!groupedDaily[dayKey]) groupedDaily[dayKey] = { q: 0, a: 0, t: 0, dateObj: dateObj, subjects: {} };
                     groupedDaily[dayKey].q += questoes; groupedDaily[dayKey].a += acertos; groupedDaily[dayKey].t += tempo;
                     if(!groupedDaily[dayKey].subjects[mat]) groupedDaily[dayKey].subjects[mat] = {q: 0, a: 0, t: 0};
@@ -592,14 +592,12 @@
             }); 
         }
 
-        // --- NOVA FUNÇÃO DO MODAL (MODO REDE SOCIAL) ---
         function openDetailsModal(key) { 
             let data = currentReportMode === 'diario' ? groupedDaily[key] : groupedWeekly[key]; 
             if(!data) return; 
             
             document.getElementById('modalTitle').innerHTML = `<i class="fas fa-camera-retro"></i> Raio-X do Ciclo: ${key}`; 
             
-            // Calcula e preenche os KPIs superiores do Modal
             let totalHrs = (data.t / 60).toFixed(1);
             let precisaoGeral = data.q > 0 ? ((data.a / data.q) * 100).toFixed(1) : 0;
             
@@ -610,12 +608,10 @@
             let tbody = document.getElementById('modalBody'); 
             tbody.innerHTML = ''; 
             
-            // Ordena as disciplinas por quantidade de tempo estudado (maior para menor)
             let subjectsSorted = Object.keys(data.subjects).sort((a, b) => data.subjects[b].t - data.subjects[a].t); 
             
             let chartLabels = [];
             let chartData = [];
-            // Paleta de cores moderna e atrativa para a Pizza
             let chartColors = ['#3A86FF', '#FFBE0B', '#38B000', '#8338EC', '#FF006E', '#00B4D8', '#FB5607', '#E0E0E0', '#7209B7', '#4CC9F0'];
 
             subjectsSorted.forEach((mat, index) => { 
@@ -624,12 +620,9 @@
                 let accClass = acc >= 75 ? 'good-acc' : 'bad-acc'; 
                 let horasDisciplina = (s.t / 60).toFixed(1);
                 
-                // Popula os dados do gráfico
                 chartLabels.push(mat);
-                // Utiliza Horas como métrica base da Pizza. Se for 0 (estudo só de flashcards rápido), usa as questões para a fatia não sumir.
                 chartData.push(s.t > 0 ? horasDisciplina : s.q);
 
-                // Popula a tabela detalhada do Modal
                 let tr = document.createElement('tr'); 
                 tr.innerHTML = `<td>${mat}</td><td><strong>${horasDisciplina}h</strong></td><td>${s.q}</td><td>${s.a}</td><td class="${accClass}">${acc}%</td>`; 
                 tbody.appendChild(tr); 
@@ -637,7 +630,6 @@
             
             document.getElementById('detailsModal').style.display = "block"; 
 
-            // Renderiza o Gráfico de Pizza
             if(modalPieChartObj) modalPieChartObj.destroy();
             
             const ctxM = document.getElementById('modalChartPie').getContext('2d');
@@ -648,7 +640,7 @@
                     datasets: [{
                         data: chartData,
                         backgroundColor: chartColors.slice(0, chartLabels.length),
-                        borderColor: '#252525', // Cor de fundo do chart-area para separar as fatias
+                        borderColor: '#252525', 
                         borderWidth: 3,
                         hoverOffset: 8
                     }]
@@ -673,7 +665,7 @@
                             }
                         }
                     },
-                    cutout: '65%' // Furo no meio para visual moderno
+                    cutout: '65%' 
                 }
             });
         }
