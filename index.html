@@ -211,7 +211,7 @@
             </div>
         </div>
 
-        <div class="gps-container" id="gps-panel">
+        <div class="gps-container" id="gps-panel" style="display: none;">
             <div class="gps-card">
                 <h3><i class="fas fa-bullseye"></i> Metas da Semana</h3>
                 <div class="goal-row">
@@ -254,6 +254,8 @@
                 </div>
             </div>
         </div>
+
+        <div id="dynamic-title" style="display: none;"><i class="fas fa-search"></i> Analisando: <span id="title-text">Visão Geral</span></div>
 
         <div class="cards-container">
             <div class="card card-q"><div class="card-icon"><i class="fas fa-tasks"></i></div><div class="card-content"><h3>Questões Resolvidas</h3><p id="kpi-q">0</p></div></div>
@@ -337,24 +339,28 @@
 
     <script>
         // ==============================================================================
-        // WEBHOOK DO APPS SCRIPT
+        // WEBHOOK DO APPS SCRIPT (MANTENHA O SEU AQUI)
         // ==============================================================================
         const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbz1vLMkc_dklbl7AxBHKBF8j1amLTAHwrUwknmLAZJxuXXaL1ra-LBjqCihay9RbX4_Qw/exec";
 
         // ==============================================================================
-        // SISTEMA DE LOGIN MVP
+        // SISTEMA DE LOGIN
         // ==============================================================================
         let loggedUserEmail = localStorage.getItem('pqdtEmail') || "";
 
         function checkLogin() {
-            if (loggedUserEmail) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-content').style.display = 'block';
-                document.getElementById('user-email-display').innerText = loggedUserEmail;
-                initApp();
-            } else {
-                document.getElementById('login-screen').style.display = 'flex';
-                document.getElementById('app-content').style.display = 'none';
+            let loginScreen = document.getElementById('login-screen');
+            let appContent = document.getElementById('app-content');
+            if(loginScreen && appContent) {
+                if (loggedUserEmail) {
+                    loginScreen.style.display = 'none';
+                    appContent.style.display = 'block';
+                    document.getElementById('user-email-display').innerText = loggedUserEmail;
+                    initApp();
+                } else {
+                    loginScreen.style.display = 'flex';
+                    appContent.style.display = 'none';
+                }
             }
         }
 
@@ -373,6 +379,10 @@
             localStorage.removeItem('pqdtEmail');
             location.reload();
         }
+
+        window.onload = function() {
+            checkLogin();
+        };
 
         // ==============================================================================
         // CONFIGURAÇÕES BASE E GAMIFICAÇÃO
@@ -401,34 +411,32 @@
             { nome: "Eng: Planejamento de Obras", chaves: ["PNFL"] }, { nome: "AFO / Orçamento Público", chaves: ["AFO"] }, { nome: "Direito Constitucional", chaves: ["DCO"] }, { nome: "Controle Externo (TCE-SP)", chaves: ["CEX"] }, { nome: "Contabilidade Pública", chaves: ["CASP"] }, { nome: "Contabilidade Geral", chaves: ["CTG"] }, { nome: "Eng: Edificações/Estruturas", chaves: ["EDF"] }, { nome: "Eng: Ambiental", chaves: ["AMB"] }, { nome: "Direito Administrativo", chaves: ["DAD"] }, { nome: "Português", chaves: ["POR"] }, { nome: "Eng: Rodoviária", chaves: ["OR"] }, { nome: "Eng: Hídrica", chaves: ["OH"] }, { nome: "Raciocínio Lógico", chaves: ["RLM"] }, { nome: "Informática", chaves: ["INF"] }, { nome: "Auditoria Governamental", chaves: ["AUDG"] }, { nome: "Peça Técnica / Parecer", chaves: ["PARECER", "PEÇA", "DISCURSIVA"] }, { nome: "Treino: Redação", chaves: ["RED", "REDAÇÃO"] }
         ];
 
-        // ==============================================================================
-        // INICIALIZAÇÃO (Só roda após Login)
-        // ==============================================================================
         function initApp() {
             updateTimerDisplay();
             let select = document.getElementById('f-materia');
-            select.innerHTML = ""; 
-            cicloMaster.forEach(d => { 
-                let opt = document.createElement('option'); 
-                opt.value = d.chaves[0]; opt.innerText = d.nome; 
-                select.appendChild(opt); 
-            });
-            document.getElementById('f-data').valueAsDate = new Date();
-            if(localStorage.getItem('metaHrs')) document.getElementById('meta-hrs').value = localStorage.getItem('metaHrs');
-            if(localStorage.getItem('metaQ')) document.getElementById('meta-q').value = localStorage.getItem('metaQ');
+            if(select) {
+                select.innerHTML = ""; 
+                cicloMaster.forEach(d => { 
+                    let opt = document.createElement('option'); 
+                    opt.value = d.chaves[0]; opt.innerText = d.nome; 
+                    select.appendChild(opt); 
+                });
+            }
+            if(document.getElementById('f-data')) document.getElementById('f-data').valueAsDate = new Date();
+            if(localStorage.getItem('metaHrs') && document.getElementById('meta-hrs')) document.getElementById('meta-hrs').value = localStorage.getItem('metaHrs');
+            if(localStorage.getItem('metaQ') && document.getElementById('meta-q')) document.getElementById('meta-q').value = localStorage.getItem('metaQ');
             
             loadGoogleSheetsData();
         }
 
-        window.onload = function() {
-            checkLogin();
-        };
-
+        // RELÓGIO
         function updateClock() {
             const now = new Date();
             const optionsDate = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
-            document.getElementById('date-display').innerText = now.toLocaleDateString('pt-BR', optionsDate).replace('.', '');
-            document.getElementById('clock-display').innerText = now.toLocaleTimeString('pt-BR');
+            let elDate = document.getElementById('date-display');
+            let elClock = document.getElementById('clock-display');
+            if(elDate) elDate.innerText = now.toLocaleDateString('pt-BR', optionsDate).replace('.', '');
+            if(elClock) elClock.innerText = now.toLocaleTimeString('pt-BR');
         }
         setInterval(updateClock, 1000); updateClock();
 
@@ -438,7 +446,8 @@
             let h = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
             let m = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
             let s = (timerSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('timer-display').innerText = `${h}:${m}:${s}`;
+            let elTimer = document.getElementById('timer-display');
+            if(elTimer) elTimer.innerText = `${h}:${m}:${s}`;
             localStorage.setItem('pqdtTimer', timerSeconds);
         }
         function startTimer() { if(!isTimerRunning) { isTimerRunning = true; timerInterval = setInterval(() => { timerSeconds++; updateTimerDisplay(); }, 1000); } }
@@ -454,40 +463,44 @@
         }
 
         // ==============================================================================
-        // SISTEMA DE DADOS COM FILTRO POR E-MAIL E NOVOS STATUS
+        // FETCH DO APPS SCRIPT (AGORA TOTALMENTE BLINDADO CONTRA ERROS DE TELA)
         // ==============================================================================
         function loadGoogleSheetsData() {
             let btn = document.getElementById('btn-sync');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
-            btn.style.backgroundColor = "var(--accent-orange)";
+            if(btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+                btn.style.backgroundColor = "var(--accent-orange)";
+            }
             
             let fetchUrl = WEBHOOK_URL + "?email=" + encodeURIComponent(loggedUserEmail);
 
-            // FETCH PURO: Sem headers customizados para não ativar o alarme de segurança (CORS Preflight) do Google
             fetch(fetchUrl)
                 .then(async response => {
-                    let text = await response.text(); // Pega a resposta do Google em formato de texto primeiro
+                    let text = await response.text(); 
                     try {
-                        let data = JSON.parse(text); // Tenta converter para os dados da planilha
+                        let data = JSON.parse(text); 
                         return data;
                     } catch (e) {
-                        // Se falhar a conversão, joga o texto do Google na tela para sabermos o que é!
-                        throw new Error("Resposta bloqueada pelo Google. Texto recebido:\n" + text.substring(0, 150) + "...");
+                        throw new Error("Erro na Leitura da Nuvem. O Google devolveu:\n" + text.substring(0, 100));
                     }
                 })
                 .then(data => {
                     processData(data);
-                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Base Sincronizada';
-                    btn.style.backgroundColor = "var(--accent-green)";
+                    if(btn) {
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> Sincronizado';
+                        btn.style.backgroundColor = "var(--accent-green)";
+                    }
                 })
                 .catch(err => {
                     console.error("Erro na API: ", err);
-                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro Conexão';
-                    btn.style.backgroundColor = "var(--accent-red)";
-                    
-                    alert("⚠️ DIAGNÓSTICO DO ERRO:\n\n" + err.message + "\n\n🚨 ATENÇÃO: Se o texto acima começar com '<!DOCTYPE html>', significa que o Google está exigindo uma senha escondida. Isso confirma que a sua conta Google não permite acesso público (é uma conta corporativa/TCE). Solução: Hospede a planilha em um @gmail.com comum!");
+                    if(btn) {
+                        btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro Conexão';
+                        btn.style.backgroundColor = "var(--accent-red)";
+                    }
+                    alert("⚠️ DIAGNÓSTICO DO ERRO:\n\n" + err.message);
                 });
         }
+
         function processData(data) {
             globalData = []; groupedDaily = {}; groupedWeekly = {}; totalQHistory = 0; dailyQ = 0; dailyMins = 0;
             currentWeekStr = getWeekNumber(new Date());
@@ -505,7 +518,6 @@
                 let topico = r[3] ? String(r[3]).trim() : 'Sem Tópico';
                 let link = r[4] ? String(r[4]).trim() : '';
                 
-                // NOVOS STATUS EXTRAÍDOS DAS COLUNAS I, J, K, L (Índices 8, 9, 10, 11)
                 let fase = r[8] ? String(r[8]).trim() : '';
                 let perc = r[9] ? String(r[9]).trim() : '';
                 let statusK = r[10] ? String(r[10]).trim() : '';
@@ -548,14 +560,16 @@
             });
 
             let filter = document.getElementById('subjectFilter');
-            filter.innerHTML = '<option value="all">Visão Geral (Todas as Disciplinas)</option>';
-            Array.from(uniqueSubjects).sort().forEach(s => { filter.innerHTML += `<option value="${s}">${s}</option>`; });
-            filter.style.display = 'inline-block';
+            if(filter) {
+                filter.innerHTML = '<option value="all">Visão Geral (Todas as Disciplinas)</option>';
+                Array.from(uniqueSubjects).sort().forEach(s => { filter.innerHTML += `<option value="${s}">${s}</option>`; });
+            }
 
-            document.getElementById('dynamic-title').style.display = 'block';
-            document.getElementById('reportSection').style.display = 'block';
-            document.getElementById('gps-panel').style.display = 'grid';
-            document.getElementById('rank-panel').style.display = 'flex';
+            // Exibe os blocos apenas se eles existirem (Blindagem)
+            if(document.getElementById('rank-panel')) document.getElementById('rank-panel').style.display = 'flex';
+            if(document.getElementById('gps-panel')) document.getElementById('gps-panel').style.display = 'grid';
+            if(document.getElementById('dynamic-title')) document.getElementById('dynamic-title').style.display = 'block';
+            if(document.getElementById('reportSection')) document.getElementById('reportSection').style.display = 'block';
 
             updateRank(); updateGPS(); updateDashboard('all'); renderReport();
         }
@@ -563,42 +577,47 @@
         function updateRank() {
             let rank = GAMER_RANKS[0]; let next = GAMER_RANKS[1];
             for(let i = 0; i < GAMER_RANKS.length; i++) { if(totalQHistory >= GAMER_RANKS[i].threshold) { rank = GAMER_RANKS[i]; next = GAMER_RANKS[i+1] || rank; } }
-            document.getElementById('rank-title').innerText = rank.title;
-            document.getElementById('rank-subtitle').innerText = rank.desc;
-            document.getElementById('rank-icon').className = `fas ${rank.icon} rank-icon`;
+            
+            if(document.getElementById('rank-title')) document.getElementById('rank-title').innerText = rank.title;
+            if(document.getElementById('rank-subtitle')) document.getElementById('rank-subtitle').innerText = rank.desc;
+            if(document.getElementById('rank-icon')) document.getElementById('rank-icon').className = `fas ${rank.icon} rank-icon`;
+            
             let pct = rank === next ? 100 : ((totalQHistory - rank.threshold) / (next.threshold - rank.threshold)) * 100;
-            document.getElementById('rank-progress-text').innerText = `${totalQHistory.toLocaleString()} / ${next.threshold.toLocaleString()} Q`;
-            document.getElementById('rank-bar').style.width = Math.min(pct, 100) + '%';
+            if(document.getElementById('rank-progress-text')) document.getElementById('rank-progress-text').innerText = `${totalQHistory.toLocaleString()} / ${next.threshold.toLocaleString()} Q`;
+            if(document.getElementById('rank-bar')) document.getElementById('rank-bar').style.width = Math.min(pct, 100) + '%';
 
             let dailyH = (dailyMins / 60).toFixed(1);
-            document.getElementById('txt-daily-q').innerText = dailyQ;
-            document.getElementById('txt-daily-h').innerText = dailyH;
+            if(document.getElementById('txt-daily-q')) document.getElementById('txt-daily-q').innerText = dailyQ;
+            if(document.getElementById('txt-daily-h')) document.getElementById('txt-daily-h').innerText = dailyH;
 
-            if(dailyQ >= 100) { document.getElementById('badge-q').className = "badge active-q"; } else { document.getElementById('badge-q').className = "badge"; }
-            if(dailyH >= 2) { document.getElementById('badge-h').className = "badge active-h"; } else { document.getElementById('badge-h').className = "badge"; }
+            if(document.getElementById('badge-q')) document.getElementById('badge-q').className = dailyQ >= 100 ? "badge active-q" : "badge";
+            if(document.getElementById('badge-h')) document.getElementById('badge-h').className = dailyH >= 2 ? "badge active-h" : "badge";
         }
 
         function saveGoals() { localStorage.setItem('metaHrs', document.getElementById('meta-hrs').value); localStorage.setItem('metaQ', document.getElementById('meta-q').value); updateGPS(); }
 
-        // ==============================================================================
-        // LÓGICA DE TRAVA DE CICLO (O GENERAL DE DIVISÃO)
-        // ==============================================================================
+        // LÓGICA DE TRAVA DE CICLO
         function updateGPS() {
-            let metaHrs = parseFloat(document.getElementById('meta-hrs').value) || 20; 
-            let metaQ = parseFloat(document.getElementById('meta-q').value) || 500;
+            let metaHrs = parseFloat(document.getElementById('meta-hrs') ? document.getElementById('meta-hrs').value : 20) || 20; 
+            let metaQ = parseFloat(document.getElementById('meta-q') ? document.getElementById('meta-q').value : 500) || 500;
             let currentWeekData = groupedWeekly[currentWeekStr] || { q: 0, t: 0 };
             
             let hrsFeitas = (currentWeekData.t / 60).toFixed(1); let qFeitas = currentWeekData.q;
             let pctHrs = Math.min((hrsFeitas / metaHrs) * 100, 100).toFixed(0);
             let pctQ = Math.min((qFeitas / metaQ) * 100, 100).toFixed(0);
 
-            document.getElementById('lbl-hrs-feito').innerText = hrsFeitas; document.getElementById('lbl-hrs-pct').innerText = pctHrs + '%'; document.getElementById('bar-hrs').style.width = pctHrs + '%';
-            document.getElementById('lbl-q-feito').innerText = qFeitas; document.getElementById('lbl-q-pct').innerText = pctQ + '%'; document.getElementById('bar-q').style.width = pctQ + '%';
+            if(document.getElementById('lbl-hrs-feito')) {
+                document.getElementById('lbl-hrs-feito').innerText = hrsFeitas; 
+                document.getElementById('lbl-hrs-pct').innerText = pctHrs + '%'; 
+                document.getElementById('bar-hrs').style.width = pctHrs + '%';
+                document.getElementById('lbl-q-feito').innerText = qFeitas; 
+                document.getElementById('lbl-q-pct').innerText = pctQ + '%'; 
+                document.getElementById('bar-q').style.width = pctQ + '%';
+            }
 
             if(globalData.length > 0) {
-                let last = globalData[0]; // A matéria mais recente
+                let last = globalData[0]; 
                 
-                // VERIFICA SE AS CONDIÇÕES DE AVANÇO FORAM ATINGIDAS
                 let isConsolidated = (
                     last.fase == "4" && 
                     last.statusK.toUpperCase() === "OK" && 
@@ -609,29 +628,34 @@
                 if(idx === -1) idx = 0;
                 
                 let p1, p2, p3, p4;
+                let missionTitleEl = document.getElementById('mission-title');
 
                 if (isConsolidated) {
-                    // SE SIM: Avança para a próxima na lista
                     p1 = cicloMaster[(idx + 1) % cicloMaster.length]; 
                     p2 = cicloMaster[(idx + 2) % cicloMaster.length];
                     p3 = cicloMaster[(idx + 3) % cicloMaster.length];
                     p4 = cicloMaster[(idx + 4) % cicloMaster.length];
-                    document.getElementById('mission-title').innerText = "Missão Cumprida! Próximo Alvo:";
-                    document.getElementById('mission-title').style.color = "var(--accent-green)";
+                    if(missionTitleEl) {
+                        missionTitleEl.innerText = "Missão Cumprida! Próximo Alvo:";
+                        missionTitleEl.style.color = "var(--accent-green)";
+                    }
                 } else {
-                    // SE NÃO: Trava na matéria atual, manda repetir
                     p1 = cicloMaster[idx]; 
                     p2 = cicloMaster[(idx + 1) % cicloMaster.length];
                     p3 = cicloMaster[(idx + 2) % cicloMaster.length];
                     p4 = cicloMaster[(idx + 3) % cicloMaster.length];
-                    document.getElementById('mission-title').innerText = "Matéria Não Consolidada! Foque nela:";
-                    document.getElementById('mission-title').style.color = "var(--accent-red)";
+                    if(missionTitleEl) {
+                        missionTitleEl.innerText = "Matéria Não Consolidada! Foque nela:";
+                        missionTitleEl.style.color = "var(--accent-red)";
+                    }
                 }
 
-                document.getElementById('mission-t1').innerText = p1.nome;
-                document.getElementById('mission-t2').innerText = p2.nome;
-                document.getElementById('mission-t3').innerText = p3.nome;
-                document.getElementById('mission-t4').innerText = p4.nome;
+                if(document.getElementById('mission-t1')) {
+                    document.getElementById('mission-t1').innerText = p1.nome;
+                    document.getElementById('mission-t2').innerText = p2.nome;
+                    document.getElementById('mission-t3').innerText = p3.nome;
+                    document.getElementById('mission-t4').innerText = p4.nome;
+                }
 
                 let linkCaderno = ""; let dataUltimaMissao = "--/--/----";
 
@@ -646,35 +670,33 @@
                 }
 
                 let container = document.getElementById('gps-ultimo-caderno');
-                
-                // Badges de Status
-                let badgeHTML = "";
-                if (!isConsolidated) {
-                    badgeHTML = `
-                    <div style="display:flex; gap: 5px; margin-top: 10px; justify-content: center; flex-wrap: wrap;">
-                        <span class="badge info" style="font-size: 10px;">Fase Atual: ${last.fase}</span>
-                        <span class="badge warning" style="font-size: 10px;">Status: ${last.statusL || "Em andamento"}</span>
-                    </div>`;
-                }
+                if(container) {
+                    let badgeHTML = "";
+                    if (!isConsolidated) {
+                        badgeHTML = `
+                        <div style="display:flex; gap: 5px; margin-top: 10px; justify-content: center; flex-wrap: wrap;">
+                            <span class="badge info" style="font-size: 10px;">Fase Atual: ${last.fase}</span>
+                            <span class="badge warning" style="font-size: 10px;">Status: ${last.statusL || "Em andamento"}</span>
+                        </div>`;
+                    }
 
-                if(linkCaderno !== "") {
-                    let urlRegex = /(https?:\/\/[^\s]+)/g; let extractedLink = linkCaderno.match(urlRegex); let finalUrl = extractedLink ? extractedLink[0] : linkCaderno;
-                    container.innerHTML = `<a href="${finalUrl}" target="_blank" class="btn" style="background:var(--accent-orange); color:black; font-size:13px; width:100%; justify-content:center; padding:12px; margin-bottom: 8px;"><i class="fas fa-external-link-alt"></i> Retomar: ${p1.chaves[0]}</a>
-                    <span style="font-size:12px; color:#888;">Último acesso: <strong>${dataUltimaMissao}</strong></span>
-                    ${badgeHTML}`;
-                } else { 
-                    container.innerHTML = `<span style="font-size:13px; color:#E0E0E0; background:#333; padding:10px; border-radius:8px; display:block; width:100%; box-sizing:border-box;">Alvo atual: <strong>${p1.chaves[0]}</strong><br><span style="color:#FFBE0B; font-size:11px;">Nenhum link web salvo.</span></span>
-                    <span style="font-size:11px; color:#aaa; margin-top:8px; display:block;">Última vez estudada: <strong>${dataUltimaMissao !== "--/--/----" ? dataUltimaMissao : "Nunca"}</strong></span>
-                    ${badgeHTML}`; 
+                    if(linkCaderno !== "") {
+                        let urlRegex = /(https?:\/\/[^\s]+)/g; let extractedLink = linkCaderno.match(urlRegex); let finalUrl = extractedLink ? extractedLink[0] : linkCaderno;
+                        container.innerHTML = `<a href="${finalUrl}" target="_blank" class="btn" style="background:var(--accent-orange); color:black; font-size:13px; width:100%; justify-content:center; padding:12px; margin-bottom: 8px;"><i class="fas fa-external-link-alt"></i> Retomar: ${p1.chaves[0]}</a>
+                        <span style="font-size:12px; color:#888;">Último acesso: <strong>${dataUltimaMissao}</strong></span>
+                        ${badgeHTML}`;
+                    } else { 
+                        container.innerHTML = `<span style="font-size:13px; color:#E0E0E0; background:#333; padding:10px; border-radius:8px; display:block; width:100%; box-sizing:border-box;">Alvo atual: <strong>${p1.chaves[0]}</strong><br><span style="color:#FFBE0B; font-size:11px;">Nenhum link web salvo.</span></span>
+                        <span style="font-size:11px; color:#aaa; margin-top:8px; display:block;">Última vez estudada: <strong>${dataUltimaMissao !== "--/--/----" ? dataUltimaMissao : "Nunca"}</strong></span>
+                        ${badgeHTML}`; 
+                    }
                 }
             } else {
-                document.getElementById('mission-title').innerText = "Bem-vindo! Inicie o seu Ciclo";
+                let mTitle = document.getElementById('mission-title');
+                if(mTitle) mTitle.innerText = "Bem-vindo! Inicie o seu Ciclo";
             }
         }
 
-        // ==============================================================================
-        // GRÁFICOS E DASHBOARD
-        // ==============================================================================
         function updateDashboard(subjectFilter) {
             let filteredData = subjectFilter !== 'all' ? globalData.filter(item => item.mat === subjectFilter) : globalData;
             let tQ = 0, tA = 0, tM = 0; let groups = {};
@@ -687,10 +709,10 @@
                 groups[gKey].q += item.q; groups[gKey].a += item.a; groups[gKey].t += item.t;
             });
             
-            document.getElementById('kpi-q').innerText = tQ.toLocaleString('pt-BR');
-            document.getElementById('kpi-acc').innerText = tQ > 0 ? ((tA/tQ)*100).toFixed(1) + '%' : '0%';
-            document.getElementById('kpi-hrs').innerText = (tM/60).toFixed(1) + 'h';
-            document.getElementById('kpi-vel').innerText = tM > 0 ? ((tQ/tM)*60).toFixed(0) + ' Q/h' : '0 Q/h';
+            if(document.getElementById('kpi-q')) document.getElementById('kpi-q').innerText = tQ.toLocaleString('pt-BR');
+            if(document.getElementById('kpi-acc')) document.getElementById('kpi-acc').innerText = tQ > 0 ? ((tA/tQ)*100).toFixed(1) + '%' : '0%';
+            if(document.getElementById('kpi-hrs')) document.getElementById('kpi-hrs').innerText = (tM/60).toFixed(1) + 'h';
+            if(document.getElementById('kpi-vel')) document.getElementById('kpi-vel').innerText = tM > 0 ? ((tQ/tM)*60).toFixed(0) + ' Q/h' : '0 Q/h';
             
             let labels = Object.keys(groups); 
             if(subjectFilter !== 'all') { labels.sort((k1, k2) => (groups[k1].a/groups[k1].q) - (groups[k2].a/groups[k2].q)); } else { labels.sort(); } 
@@ -704,7 +726,16 @@
 
         function renderCharts(mode, labels, accData, hrsData, volData) { 
             if(chart1Obj) chart1Obj.destroy(); if(chart2Obj) chart2Obj.destroy(); if(chart3Obj) chart3Obj.destroy(); 
-            const ctx1 = document.getElementById('chart1').getContext('2d'); const ctx2 = document.getElementById('chart2').getContext('2d'); const ctx3 = document.getElementById('chart3').getContext('2d'); 
+            
+            let canvas1 = document.getElementById('chart1');
+            let canvas2 = document.getElementById('chart2');
+            let canvas3 = document.getElementById('chart3');
+            
+            if(!canvas1 || !canvas2 || !canvas3) return;
+
+            const ctx1 = canvas1.getContext('2d'); 
+            const ctx2 = canvas2.getContext('2d'); 
+            const ctx3 = canvas3.getContext('2d'); 
             
             if(mode === 'all') { 
                 chart1Obj = new Chart(ctx1, { type: 'radar', data: { labels: labels, datasets: [{ label: '% de Acerto', data: accData, backgroundColor: 'rgba(56, 176, 0, 0.2)', borderColor: '#38B000', pointBackgroundColor: '#38B000' }] }, options: { plugins: { title: { display: true, text: 'PRECISÃO GLOBAL', font: { size: 16 } } }, scales: { r: { min: 0, max: 100, ticks: { backdropColor: 'transparent', stepSize: 20 } } }, maintainAspectRatio: false } }); 
@@ -718,10 +749,24 @@
             } 
         }
 
-        function switchReport(mode) { currentReportMode = mode; document.getElementById('btnDiario').classList.remove('active'); document.getElementById('btnSemanal').classList.remove('active'); if(mode === 'diario') document.getElementById('btnDiario').classList.add('active'); else document.getElementById('btnSemanal').classList.add('active'); renderReport(); }
+        function switchReport(mode) { 
+            currentReportMode = mode; 
+            if(document.getElementById('btnDiario')) document.getElementById('btnDiario').classList.remove('active'); 
+            if(document.getElementById('btnSemanal')) document.getElementById('btnSemanal').classList.remove('active'); 
+            if(mode === 'diario') {
+                if(document.getElementById('btnDiario')) document.getElementById('btnDiario').classList.add('active'); 
+            } else {
+                if(document.getElementById('btnSemanal')) document.getElementById('btnSemanal').classList.add('active'); 
+            }
+            renderReport(); 
+        }
         
         function renderReport() { 
-            let tbody = document.getElementById('report-body'); let colPeriodo = document.getElementById('col-periodo'); tbody.innerHTML = ''; let dataArray = []; 
+            let tbody = document.getElementById('report-body'); 
+            let colPeriodo = document.getElementById('col-periodo'); 
+            if(!tbody || !colPeriodo) return;
+
+            tbody.innerHTML = ''; let dataArray = []; 
             if (currentReportMode === 'diario') { 
                 colPeriodo.innerText = 'Data do Estudo'; 
                 dataArray = Object.keys(groupedDaily).map(k => { return { key: k, sortDate: groupedDaily[k].dateObj, ...groupedDaily[k] }; }); 
@@ -770,10 +815,12 @@
         function closeDetailsModal() { document.getElementById('detailsModal').style.display = 'none'; } 
         
         function openEntryModal() { 
-            if(timerSeconds > 0) document.getElementById('f-tempo').value = Math.floor(timerSeconds/60); 
-            document.getElementById('entryModal').style.display = 'block'; 
+            if(timerSeconds > 0 && document.getElementById('f-tempo')) {
+                document.getElementById('f-tempo').value = Math.floor(timerSeconds/60); 
+            }
+            if(document.getElementById('entryModal')) document.getElementById('entryModal').style.display = 'block'; 
         }
-        function closeEntryModal() { document.getElementById('entryModal').style.display = 'none'; }
+        function closeEntryModal() { if(document.getElementById('entryModal')) document.getElementById('entryModal').style.display = 'none'; }
         
         function submitEntry(e) {
             e.preventDefault(); 
