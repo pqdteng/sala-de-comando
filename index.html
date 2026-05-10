@@ -463,16 +463,17 @@
             
             let fetchUrl = WEBHOOK_URL + "?email=" + encodeURIComponent(loggedUserEmail);
 
-            fetch(fetchUrl)
-                .then(async response => {
-                    if (!response.ok) throw new Error("Erro HTTP: " + response.status);
-                    let text = await response.text();
-                    try {
-                        return JSON.parse(text); // Tenta converter para os dados da planilha
-                    } catch (e) {
-                        // Se falhar, é porque o Google não mandou os dados, mandou uma página de erro ou login
-                        throw new Error("O Google bloqueou a resposta. Texto recebido: " + text.substring(0, 60) + "...");
-                    }
+            // Adicionamos parâmetros extra para forçar o navegador a seguir os redirecionamentos do Google
+            fetch(fetchUrl, {
+                method: 'GET',
+                redirect: 'follow', // ORDEM TÁTICA: Seguir redirecionamento do Apps Script
+                headers: {
+                    "Accept": "application/json"
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Falha na resposta do servidor.");
+                    return response.json();
                 })
                 .then(data => {
                     processData(data);
@@ -483,9 +484,7 @@
                     console.error("Erro na API: ", err);
                     btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro Conexão';
                     btn.style.backgroundColor = "var(--accent-red)";
-                    
-                    // Mostra na tela exatamente o que deu errado
-                    alert("⚠️ RELATÓRIO DE PANE:\n\n" + err.message + "\n\nSe o erro for 'Failed to fetch', o seu Apps Script não está configurado para 'Qualquer Pessoa' ou você esqueceu de publicar como 'Nova Versão'.");
+                    alert("⚠️ RELATÓRIO DE ERRO:\nA ligação foi rejeitada pelo navegador. Se o Webhook estiver correto, o problema deriva de bloqueios corporativos da conta Google onde o script está alojado (Google Workspace).");
                 });
         }
         function processData(data) {
