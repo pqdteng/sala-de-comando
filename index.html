@@ -344,113 +344,87 @@
             let pctHrs = Math.min((hrsFeitas / metaHrs) * 100, 100).toFixed(0);
             let pctQ = Math.min((qFeitas / metaQ) * 100, 100).toFixed(0);
 
-            if(document.getElementById('lbl-hrs-feito')) {
-                document.getElementById('lbl-hrs-feito').innerText = hrsFeitas; 
-                document.getElementById('lbl-hrs-pct').innerText = pctHrs + '%'; 
+            if(document.getElementById('lbl-hf')) {
+                document.getElementById('lbl-hf').innerText = hrsFeitas; 
+                document.getElementById('lbl-hp').innerText = pctHrs + '%'; 
                 document.getElementById('bar-hrs').style.width = pctHrs + '%';
-                document.getElementById('lbl-q-feito').innerText = qFeitas; 
-                document.getElementById('lbl-q-pct').innerText = pctQ + '%'; 
+                document.getElementById('lbl-qf').innerText = qFeitas; 
+                document.getElementById('lbl-qp').innerText = pctQ + '%'; 
                 document.getElementById('bar-q').style.width = pctQ + '%';
             }
 
             if(globalData.length > 0) {
                 let last = globalData[0]; 
                 
-                let isConsolidated = (
-                    last.fase == "4" && 
-                    last.statusK.toUpperCase() === "OK" && 
-                    last.statusL.toUpperCase().includes("CONSOLIDADO")
-                );
+                // CORREÇÃO: Tratamento blindado de variáveis vazias (Impede o congelamento do painel)
+                let valFase = last.fase ? String(last.fase).trim() : "";
+                let valK = last.k ? String(last.k).toUpperCase().trim() : "";
+                let valL = last.l ? String(last.l).toUpperCase().trim() : "";
                 
-                let idx = cicloMaster.findIndex(d => last.mat === d.chaves[0] || last.mat.includes(d.nome)); 
+                let isConsolidated = (valFase === "4" && valK === "OK" && valL.includes("CONSOLIDADO"));
+                
+                let idx = CICLO.findIndex(d => last.mat === d.c[0] || last.mat.includes(d.n)); 
                 if(idx === -1) idx = 0;
                 
                 let p1, p2, p3, p4;
-                let missionTitleEl = document.getElementById('mission-title');
-
+                
+                // Reconstruindo as listas e o HTML com base na validação da trava
                 if (isConsolidated) {
-                    p1 = cicloMaster[(idx + 1) % cicloMaster.length]; 
-                    p2 = cicloMaster[(idx + 2) % cicloMaster.length];
-                    p3 = cicloMaster[(idx + 3) % cicloMaster.length];
-                    p4 = cicloMaster[(idx + 4) % cicloMaster.length];
-                    if(missionTitleEl) {
-                        missionTitleEl.innerText = "Missão Cumprida! Próximo Alvo:";
-                        missionTitleEl.style.color = "var(--accent-green)";
-                    }
+                    p1 = CICLO[(idx + 1) % CICLO.length]; 
+                    p2 = CICLO[(idx + 2) % CICLO.length];
+                    
+                    document.getElementById('mission-list').innerHTML = `
+                        <li style="color:var(--accent-green); font-weight:bold; margin-bottom:10px;">Missão Cumprida! Próximo Alvo:</li>
+                        <li class="now"><strong>Agora:</strong> ${p1.n}</li>
+                        <li><strong>Passo 2:</strong> ${p2.n}</li>
+                    `;
                 } else {
-                    p1 = cicloMaster[idx]; 
-                    p2 = cicloMaster[(idx + 1) % cicloMaster.length];
-                    p3 = cicloMaster[(idx + 2) % cicloMaster.length];
-                    p4 = cicloMaster[(idx + 3) % cicloMaster.length];
-                    if(missionTitleEl) {
-                        missionTitleEl.innerText = "Matéria Não Consolidada! Foque nela:";
-                        missionTitleEl.style.color = "var(--accent-red)";
-                    }
+                    p1 = CICLO[idx]; 
+                    p2 = CICLO[(idx + 1) % CICLO.length];
+                    
+                    document.getElementById('mission-list').innerHTML = `
+                        <li style="color:var(--accent-red); font-weight:bold; margin-bottom:10px;">Não Consolidada! Retome:</li>
+                        <li class="now"><strong>Agora:</strong> ${p1.n}</li>
+                        <li><strong>Próximo:</strong> ${p2.n}</li>
+                    `;
                 }
 
-                if(document.getElementById('mission-t1')) {
-                    document.getElementById('mission-t1').innerText = p1.nome;
-                    document.getElementById('mission-t2').innerText = p2.nome;
-                    document.getElementById('mission-t3').innerText = p3.nome;
-                    document.getElementById('mission-t4').innerText = p4.nome;
-                }
-
-                let linkCaderno = ""; let dataUltimaMissao = "--/--/----";
-
-                for(let i = 0; i < globalData.length; i++) {
-                    let item = globalData[i];
-                    if(item.mat === p1.chaves[0] || item.mat.includes(p1.nome)) {
-                        if(dataUltimaMissao === "--/--/----") dataUltimaMissao = item.dataReal.toLocaleDateString('pt-BR');
-                        if(item.link && (item.link.includes("http") || item.link.includes("www"))) {
-                            linkCaderno = item.link; break; 
-                        }
-                    }
-                }
-
+                let cad = globalData.find(x => x.mat === p1.c[0] || x.mat.includes(p1.n));
                 let container = document.getElementById('gps-ultimo-caderno');
-                if(container) {
-                    let badgeHTML = "";
-                    if (!isConsolidated) {
-                        badgeHTML = `
-                        <div style="display:flex; gap: 5px; margin-top: 10px; justify-content: center; flex-wrap: wrap;">
-                            <span class="badge info" style="font-size: 10px;">Fase Atual: ${last.fase}</span>
-                            <span class="badge warning" style="font-size: 10px;">Status: ${last.statusL || "Em andamento"}</span>
-                        </div>`;
-                    }
+                
+                let badgeHTML = "";
+                if (!isConsolidated) {
+                    badgeHTML = `
+                    <div style="display:flex; gap: 5px; margin-top: 10px; justify-content: center; flex-wrap: wrap;">
+                        <span class="badge info" style="font-size: 10px; border-color:var(--accent-blue);">Fase Atual: ${valFase || "?"}</span>
+                        <span class="badge warning" style="font-size: 10px; border-color:var(--accent-red);">Status: ${valL || "Em andamento"}</span>
+                    </div>`;
+                }
 
-                    if(linkCaderno !== "") {
-                        let urlRegex = /(https?:\/\/[^\s]+)/g; let extractedLink = linkCaderno.match(urlRegex); let finalUrl = extractedLink ? extractedLink[0] : linkCaderno;
-                        container.innerHTML = `<a href="${finalUrl}" target="_blank" class="btn" style="background:var(--accent-orange); color:black; font-size:13px; width:100%; justify-content:center; padding:12px; margin-bottom: 8px;"><i class="fas fa-external-link-alt"></i> Retomar: ${p1.chaves[0]}</a>
-                        <span style="font-size:12px; color:#888;">Último acesso: <strong>${dataUltimaMissao}</strong></span>
+                if(cad && cad.link && cad.link.includes('http')) {
+                    let urlRegex = /(https?:\/\/[^\s]+)/g; let ext = cad.link.match(urlRegex); let finalUrl = ext ? ext[0] : cad.link;
+                    container.innerHTML = `
+                        <a href="${finalUrl}" target="_blank" class="btn" style="background:var(--accent-orange); color:black; width:100%; justify-content:center; margin-bottom:8px;"><i class="fas fa-external-link-alt"></i> RETOMAR: ${p1.c[0]}</a>
+                        <div style="font-size:11px; color:#aaa;">Último acesso: <strong>${cad.date.toLocaleDateString()}</strong></div>
                         ${badgeHTML}`;
-                    } else { 
-                        container.innerHTML = `<span style="font-size:13px; color:#E0E0E0; background:#333; padding:10px; border-radius:8px; display:block; width:100%; box-sizing:border-box;">Alvo atual: <strong>${p1.chaves[0]}</strong><br><span style="color:#FFBE0B; font-size:11px;">Nenhum link web salvo.</span></span>
-                        <span style="font-size:11px; color:#aaa; margin-top:8px; display:block;">Última vez estudada: <strong>${dataUltimaMissao !== "--/--/----" ? dataUltimaMissao : "Nunca"}</strong></span>
-                        ${badgeHTML}`; 
-                    }
+                } else {
+                    let dStr = cad && cad.date ? cad.date.toLocaleDateString() : "Nunca";
+                    container.innerHTML = `
+                        <div style="background:#333; padding:10px; border-radius:8px; width:100%; box-sizing:border-box;">Alvo: <strong>${p1.c[0]}</strong><br><span style="color:#FFBE0B; font-size:11px;">Sem link salvo.</span></div>
+                        <div style="font-size:11px; color:#aaa; margin-top:8px;">Último acesso: <strong>${dStr}</strong></div>
+                        ${badgeHTML}`;
                 }
             } else {
-                // ========================================================
-                // O SEGREDO DO "ESTADO VAZIO" (NOVO USUÁRIO) COMEÇA AQUI
-                // ========================================================
-                let mTitle = document.getElementById('mission-title');
-                if(mTitle) {
-                    mTitle.innerText = "Bem-vindo! Inicie o seu Ciclo";
-                    mTitle.style.color = "var(--accent-green)";
-                }
-                
-                if(document.getElementById('mission-t1')) {
-                    document.getElementById('mission-t1').innerText = cicloMaster[0].nome;
-                    document.getElementById('mission-t2').innerText = cicloMaster[1].nome;
-                    document.getElementById('mission-t3').innerText = cicloMaster[2].nome;
-                    document.getElementById('mission-t4').innerText = cicloMaster[3].nome;
-                }
-
-                let container = document.getElementById('gps-ultimo-caderno');
-                if(container) {
-                    container.innerHTML = `<span style="font-size:13px; color:#E0E0E0; background:#333; padding:10px; border-radius:8px; display:block; width:100%; box-sizing:border-box;">Alvo atual: <strong>${cicloMaster[0].chaves[0]}</strong><br><span style="color:#FFBE0B; font-size:11px;">Aguardando o seu 1º lançamento.</span></span>
-                    <span style="font-size:11px; color:#aaa; margin-top:8px; display:block;">Última vez estudada: <strong>Nunca</strong></span>`;
-                }
+                // ESTADO VAZIO (NOVO ALUNO)
+                document.getElementById('mission-list').innerHTML = `
+                    <li style="color:var(--accent-green); font-weight:bold; margin-bottom:10px;">Bem-vindo! Inicie o seu Ciclo:</li>
+                    <li class="now"><strong>Agora:</strong> ${CICLO[0].n}</li>
+                    <li><strong>Próximo:</strong> ${CICLO[1].n}</li>
+                `;
+                document.getElementById('gps-ultimo-caderno').innerHTML = `
+                    <div style="background:#333; padding:10px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom:8px;">Alvo: <strong>${CICLO[0].c[0]}</strong><br><span style="color:#FFBE0B; font-size:11px;">1º lançamento pendente.</span></div>
+                    <div style="font-size:11px; color:#aaa; margin-top:8px;">Aguardando missão...</div>
+                `;
             }
         }
 
