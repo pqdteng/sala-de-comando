@@ -405,43 +405,51 @@ Segue a lista de questões:
             { threshold: 30000, title: "Mito", icon: "fa-meteor", desc: "Deus dos Concursos!" }
         ];
 
-        // BASE DE DADOS DE TODAS AS MATÉRIAS POSSÍVEIS (ALINHADA COM O '.chaves[0]')
+        // BASE DE DADOS DE TODAS AS MATÉRIAS POSSÍVEIS (ORDEM DO CICLO)
         const TODAS_MATERIAS = [
-            { chaves: ["POR"], nome: "Português" },
-            { chaves: ["RLM"], nome: "Raciocínio Lógico" },
-            { chaves: ["DCO"], nome: "Direito Constitucional" },
-            { chaves: ["DAD"], nome: "Direito Administrativo" },
-            { chaves: ["AFO"], nome: "AFO / Orçamento Público" },
-            { chaves: ["CEX"], nome: "Controle Externo" },
-            { chaves: ["AUDG"], nome: "Auditoria Governamental" },
-            { chaves: ["CTG"], nome: "Contabilidade Geral" },
-            { chaves: ["CASP"], nome: "Contabilidade Pública" },
-            { chaves: ["ADM"], nome: "Administração Pública" },
-            { chaves: ["ECO"], nome: "Economia" },
-            { chaves: ["INF"], nome: "Informática / TI" },
+            // Sequência Original (Engenharia intercalada com Controle)
             { chaves: ["PNFL"], nome: "Eng: Planejamento de Obras" },
+            { chaves: ["AFO"], nome: "AFO / Orçamento Público" },
+            { chaves: ["DCO"], nome: "Direito Constitucional" },
+            { chaves: ["CEX"], nome: "Controle Externo" },
+            { chaves: ["CASP"], nome: "Contabilidade Pública" },
+            { chaves: ["CTG"], nome: "Contabilidade Geral" },
             { chaves: ["EDF"], nome: "Eng: Edificações/Estruturas" },
             { chaves: ["AMB"], nome: "Eng: Ambiental" },
+            { chaves: ["DAD"], nome: "Direito Administrativo" },
+            { chaves: ["POR"], nome: "Português" },
             { chaves: ["OR"], nome: "Eng: Rodoviária" },
             { chaves: ["OH"], nome: "Eng: Hídrica" },
-            { chaves: ["CIV"], nome: "Direito Civil" },
-            { chaves: ["PEN"], nome: "Direito Penal" },
+            { chaves: ["RLM"], nome: "Raciocínio Lógico" },
+            { chaves: ["INF"], nome: "Informática / TI" },
+            { chaves: ["AUDG"], nome: "Auditoria Governamental" },
             { chaves: ["PARECER"], nome: "Peça Técnica / Parecer" },
-            { chaves: ["RED"], nome: "Treino: Redação" }
+            { chaves: ["RED"], nome: "Treino: Redação" },
+            
+            // Matérias Adicionais (Ficam no final da lista de seleção)
+            { chaves: ["ADM"], nome: "Administração Pública" },
+            { chaves: ["ECO"], nome: "Economia" },
+            { chaves: ["CIV"], nome: "Direito Civil" },
+            { chaves: ["PEN"], nome: "Direito Penal" }
         ];
 
         let cicloMaster = []; // Ciclo dinâmico do usuário
 
         // ==============================================================================
-        // CONFIGURADOR DE CICLO (MÉTODO 2) - CORRIGIDO
+        // CONFIGURADOR DE CICLO
         // ==============================================================================
         function loadCiclo() {
             let saved = localStorage.getItem('pqdtCicloCustom');
             if(saved) {
                 cicloMaster = JSON.parse(saved);
             } else {
-                // Ciclo Padrão de Engenheiro se for o 1º acesso
-                cicloMaster = TODAS_MATERIAS.filter(m => ["PNFL", "AFO", "DCO", "CEX", "CASP", "CTG", "EDF", "DAD", "POR", "OR"].includes(m.chaves[0]));
+                // Monta o ciclo padrão mantendo a exata ordem da lista mestre
+                let chavesPadrao = ["PNFL", "AFO", "DCO", "CEX", "CASP", "CTG", "EDF", "DAD", "POR", "OR"];
+                cicloMaster = [];
+                chavesPadrao.forEach(sigla => {
+                    let mat = TODAS_MATERIAS.find(m => m.chaves[0] === sigla);
+                    if(mat) cicloMaster.push(mat);
+                });
             }
             updateSelects();
         }
