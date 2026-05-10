@@ -575,15 +575,62 @@
         }
 
         function openDetailsModal(k) {
-            let d = currentReportMode === 'diario' ? groupedDaily[k] : groupedWeekly[k]; if(!d) return;
+            let d = currentReportMode === 'diario' ? groupedDaily[k] : groupedWeekly[k]; 
+            if(!d) return;
+            
             document.getElementById('detailsModal').style.display = 'block';
-            let b = document.getElementById('modalBody'); b.innerHTML = '';
-            Object.keys(d.subjects).forEach(s => {
-                let v = d.subjects[s]; let ac = v.q>0 ? ((v.a/v.q)*100).toFixed(1) : 0;
-                b.innerHTML += `<tr><td>${s}</td><td>${(v.t/60).toFixed(1)}h</td><td>${v.q}</td><td>${v.a}</td><td>${ac}%</td></tr>`;
+
+            // Atualiza os textos do modal
+            if(document.getElementById('modalTitle')) {
+                document.getElementById('modalTitle').innerHTML = `<i class="fas fa-camera-retro"></i> Raio-X do Ciclo: ${k}`;
+            }
+
+            let b = document.getElementById('modalBody'); 
+            b.innerHTML = '';
+            
+            let chartLabels = []; 
+            let chartData = [];
+            let chartColors = ['#3A86FF', '#FFBE0B', '#38B000', '#8338EC', '#FF006E', '#00B4D8', '#FB5607', '#E0E0E0', '#7209B7', '#4CC9F0'];
+
+            // Ordena para as matérias com mais tempo ficarem no topo da tabela e maiores no gráfico
+            let subjectsSorted = Object.keys(d.subjects).sort((s1, s2) => d.subjects[s2].t - d.subjects[s1].t);
+
+            subjectsSorted.forEach(s => {
+                let v = d.subjects[s]; 
+                let ac = v.q > 0 ? ((v.a / v.q) * 100).toFixed(1) : 0;
+                let h = (v.t / 60).toFixed(1);
+                
+                chartLabels.push(s);
+                chartData.push(v.t > 0 ? h : v.q); // Usa as horas como peso para o gráfico (ou questões se for 0h)
+
+                b.innerHTML += `<tr><td>${s}</td><td><strong>${h}h</strong></td><td>${v.q}</td><td>${v.a}</td><td>${ac}%</td></tr>`;
+            });
+
+            // Restaura e desenha o Gráfico Donut
+            if(modalPieChartObj) modalPieChartObj.destroy();
+            const ctxM = document.getElementById('modalChartPie').getContext('2d');
+            modalPieChartObj = new Chart(ctxM, {
+                type: 'doughnut',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: chartColors.slice(0, chartLabels.length),
+                        borderColor: '#252525',
+                        borderWidth: 3,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#E0E0E0', font: { size: 12 } } }
+                    },
+                    cutout: '65%'
+                }
             });
         }
-
         function openEntryModal() { document.getElementById('entryModal').style.display='block'; if(timerSeconds>0) document.getElementById('f-tempo').value = Math.floor(timerSeconds/60); }
 
         function submitEntry(e) {
