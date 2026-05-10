@@ -463,17 +463,17 @@
             
             let fetchUrl = WEBHOOK_URL + "?email=" + encodeURIComponent(loggedUserEmail);
 
-            // Adicionamos parâmetros extra para forçar o navegador a seguir os redirecionamentos do Google
-            fetch(fetchUrl, {
-                method: 'GET',
-                redirect: 'follow', // ORDEM TÁTICA: Seguir redirecionamento do Apps Script
-                headers: {
-                    "Accept": "application/json"
-                }
-            })
-                .then(response => {
-                    if (!response.ok) throw new Error("Falha na resposta do servidor.");
-                    return response.json();
+            // FETCH PURO: Sem headers customizados para não ativar o alarme de segurança (CORS Preflight) do Google
+            fetch(fetchUrl)
+                .then(async response => {
+                    let text = await response.text(); // Pega a resposta do Google em formato de texto primeiro
+                    try {
+                        let data = JSON.parse(text); // Tenta converter para os dados da planilha
+                        return data;
+                    } catch (e) {
+                        // Se falhar a conversão, joga o texto do Google na tela para sabermos o que é!
+                        throw new Error("Resposta bloqueada pelo Google. Texto recebido:\n" + text.substring(0, 150) + "...");
+                    }
                 })
                 .then(data => {
                     processData(data);
@@ -484,7 +484,8 @@
                     console.error("Erro na API: ", err);
                     btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro Conexão';
                     btn.style.backgroundColor = "var(--accent-red)";
-                    alert("⚠️ RELATÓRIO DE ERRO:\nA ligação foi rejeitada pelo navegador. Se o Webhook estiver correto, o problema deriva de bloqueios corporativos da conta Google onde o script está alojado (Google Workspace).");
+                    
+                    alert("⚠️ DIAGNÓSTICO DO ERRO:\n\n" + err.message + "\n\n🚨 ATENÇÃO: Se o texto acima começar com '<!DOCTYPE html>', significa que o Google está exigindo uma senha escondida. Isso confirma que a sua conta Google não permite acesso público (é uma conta corporativa/TCE). Solução: Hospede a planilha em um @gmail.com comum!");
                 });
         }
         function processData(data) {
