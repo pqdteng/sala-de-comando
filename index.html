@@ -52,18 +52,25 @@
         .grid-3-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
         /* GAMIFICAÇÃO */
-        .rank-container { background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%); border: 2px solid var(--accent-gold); border-radius: 15px; padding: 15px 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 20px rgba(255, 215, 0, 0.15); flex-wrap: wrap; gap: 20px;}
-        .rank-info { display: flex; align-items: center; gap: 20px; }
+        .rank-container { background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%); border: 2px solid var(--accent-gold); border-radius: 15px; padding: 20px 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 20px rgba(255, 215, 0, 0.15); flex-wrap: wrap; gap: 20px; position: relative;}
+        
+        .view-ranks-link { position: absolute; top: 15px; right: 30px; color: var(--accent-blue); font-size: 0.85em; text-decoration: none; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .view-ranks-link:hover { text-decoration: underline; color: white; }
+
+        .rank-info { display: flex; align-items: center; gap: 20px; margin-top: 10px;}
         .rank-icon { font-size: 3.5em; color: var(--accent-gold); text-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
         .rank-details h2 { margin: 0; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 2px; font-size: 1.5em; }
         .rank-details p { margin: 5px 0 0 0; color: #aaa; font-size: 0.9em; }
-        .xp-bar-container { flex-grow: 1; max-width: 500px; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        
+        .coin-badge { margin-top: 8px; color: var(--accent-gold); font-weight: bold; font-size: 0.9em; background: rgba(255,215,0,0.1); padding: 4px 10px; border-radius: 6px; display: inline-block; border: 1px solid rgba(255,215,0,0.3);}
+
+        .xp-bar-container { flex-grow: 1; max-width: 500px; width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 10px;}
         .xp-bar-bg { width: 100%; height: 16px; background-color: #333; border-radius: 10px; overflow: hidden; border: 1px solid #555; }
         .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #FFBE0B, #FFD700); width: 0%; transition: 1.5s ease-out; }
         .bonus-badges { display: flex; gap: 15px; margin-top: 5px; font-size: 0.85em; flex-wrap: wrap; }
         .badge { background: #333; padding: 5px 12px; border-radius: 6px; color: #888; display: flex; align-items: center; gap: 6px; transition: 0.5s; font-weight: bold; flex-grow: 1; justify-content: center;}
-        .badge.active-q { background: rgba(255, 190, 11, 0.2); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
-        .badge.active-h { background: rgba(56, 176, 0, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge.active-q { background: rgba(255, 190, 11, 0.2); color: var(--accent-orange); border: 1px solid var(--accent-orange); box-shadow: 0 0 10px rgba(255,190,11,0.2);}
+        .badge.active-h { background: rgba(56, 176, 0, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); box-shadow: 0 0 10px rgba(56,176,0,0.2);}
 
         /* FOCO E CRONÔMETRO */
         .focus-section { display: flex; justify-content: center; align-items: stretch; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
@@ -147,14 +154,20 @@
         .tutorial-target { display: inline-block; background: #333; padding: 2px 8px; border-radius: 4px; color: var(--accent-green); font-weight: bold; font-size: 0.85em; margin-top: 5px;}
         .prompt-box { background: #121212; border: 1px solid #444; border-radius: 8px; padding: 15px; font-family: monospace; font-size: 0.85em; color: #FFBE0B; white-space: pre-wrap; overflow-x: auto; position: relative; margin-top: 15px;}
 
+        /* LISTA DE PATENTES MODAL */
+        .rank-list-item { display: flex; align-items: center; gap: 15px; padding: 12px; background: #1a1a1a; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; }
+        .rank-list-item.current { background: #2A2A2A; border-color: var(--accent-gold); border-left: 5px solid var(--accent-gold); }
+        .rank-list-item.locked { opacity: 0.6; }
+
         /* ENGENHARIA RESPONSIVA (MOBILE FIRST) */
         @media (max-width: 768px) {
             body { padding: 10px; }
             .header { flex-direction: column; align-items: stretch; text-align: center; }
             .controls { flex-direction: column; width: 100%; }
             .controls select, .controls button { width: 100%; }
-            .rank-container { flex-direction: column; text-align: center; }
-            .rank-info { flex-direction: column; }
+            .rank-container { flex-direction: column; text-align: center; padding-top: 40px;}
+            .view-ranks-link { top: 10px; right: 10px; width: 100%; justify-content: center; }
+            .rank-info { flex-direction: column; gap: 10px;}
             .xp-bar-container { max-width: 100%; }
             .focus-section { flex-direction: column; }
             .datetime-container, .timer-container { width: 100%; min-width: unset; }
@@ -226,13 +239,23 @@
         </div>
 
         <div class="rank-container" id="rank-panel">
-            <div class="rank-info"><i class="fas fa-hammer rank-icon" id="rank-icon"></i><div class="rank-details"><h2 id="rank-title">Ferro</h2><p id="rank-subtitle">Iniciando</p></div></div>
+            <a class="view-ranks-link" onclick="openRanksModal()"><i class="fas fa-list-ol"></i> Ver todas as Patentes</a>
+            
+            <div class="rank-info">
+                <i class="fas fa-hammer rank-icon" id="rank-icon"></i>
+                <div class="rank-details">
+                    <h2 id="rank-title">Ferro</h2>
+                    <p id="rank-subtitle">Iniciando a jornada</p>
+                    <div class="coin-badge"><i class="fas fa-coins"></i> <span id="coin-display">0</span> Moedas</div>
+                </div>
+            </div>
+            
             <div class="xp-bar-container">
                 <div style="display:flex; justify-content:space-between; font-size:0.8em; color:#aaa; font-weight:bold;"><span>Nível de XP (Questões)</span><span id="rank-progress-text">0 / 1000 Q</span></div>
                 <div class="xp-bar-bg"><div class="xp-bar-fill" id="rank-bar"></div></div>
                 <div class="bonus-badges">
-                    <div class="badge" id="badge-q"><i class="fas fa-fire"></i> Questões Hoje: <span id="txt-daily-q">0</span> / 100</div>
-                    <div class="badge" id="badge-h"><i class="fas fa-clock"></i> Horas Hoje: <span id="txt-daily-h">0.0</span> / 2h</div>
+                    <div class="badge" id="badge-q"><i class="fas fa-fire"></i> Meta Qs Hoje: <span id="txt-daily-q">0</span> / 100</div>
+                    <div class="badge" id="badge-h"><i class="fas fa-clock"></i> Meta Hrs Hoje: <span id="txt-daily-h">0.0</span> / 2h</div>
                 </div>
             </div>
         </div>
@@ -288,6 +311,18 @@
             <div style="overflow-x: auto; width: 100%;">
                 <table><thead><tr><th id="col-periodo">Data</th><th>Questões</th><th>Acertos</th><th>% Acerto</th><th>Tempo (h)</th><th>Velocidade</th><th>Raio-X</th></tr></thead><tbody id="report-body"></tbody></table>
             </div>
+        </div>
+    </div>
+
+    <div id="ranksModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <span class="close-btn" onclick="document.getElementById('ranksModal').style.display='none'">&times;</span>
+            <h2 style="color: var(--accent-gold); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px;"><i class="fas fa-trophy"></i> Hierarquia de Patentes</h2>
+            
+            <div id="next-rank-info" style="margin-top: 15px;"></div>
+            
+            <div id="ranks-list-container" style="margin-top: 20px;">
+                </div>
         </div>
     </div>
 
@@ -402,6 +437,17 @@ Segue a lista de questões:
     </div>
 
     <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; }
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; }
+        }
+    </script>
+
+    <script>
         // ==============================================================================
         // WEBHOOK DO APPS SCRIPT
         // ==============================================================================
@@ -420,6 +466,7 @@ Segue a lista de questões:
         let currentReportMode = 'diario'; 
         let currentWeekStr = ""; 
         let totalQHistory = 0; let dailyQ = 0; let dailyMins = 0;
+        let totalMoedas = 0; // NOVA VARIÁVEL DE RECOMPENSAS
 
         const GAMER_RANKS = [
             { threshold: 0, title: "Ferro", icon: "fa-hammer", desc: "Iniciando a jornada" },
@@ -429,10 +476,11 @@ Segue a lista de questões:
             { threshold: 10000, title: "Platina", icon: "fa-star", desc: "Rumo à aprovação" },
             { threshold: 15000, title: "Diamante", icon: "fa-gem", desc: "Mente brilhante" },
             { threshold: 20000, title: "Mestre", icon: "fa-crown", desc: "Domínio absoluto" },
-            { threshold: 30000, title: "Mito", icon: "fa-meteor", desc: "Deus dos Concursos!" }
+            { threshold: 30000, title: "Lenda", icon: "fa-bolt", desc: "Nome no Diário Oficial" },
+            { threshold: 50000, title: "Mito", icon: "fa-meteor", desc: "Deus dos Concursos!" }
         ];
 
-        // BASE MESTRE DE MATÉRIAS (Padronizadas)
+        // BASE MESTRE DE MATÉRIAS
         const TODAS_MATERIAS = [
             { chaves: ["PNFL"], nome: "Eng: Planejamento de Obras" },
             { chaves: ["AFO"], nome: "AFO / Orçamento Público" },
@@ -463,7 +511,7 @@ Segue a lista de questões:
         let tempCiclo = [];   
 
         // ==============================================================================
-        // CONFIGURADOR DE CICLO (SELEÇÃO, ORDENAÇÃO E CRIAÇÃO)
+        // CONFIGURADOR DE CICLO
         // ==============================================================================
         function loadCiclo() {
             let saved = localStorage.getItem('pqdtCicloCustom');
@@ -492,7 +540,6 @@ Segue a lista de questões:
             containerCB.innerHTML = '';
             containerList.innerHTML = '';
 
-            // Junta a Base Mestre com as matérias que o aluno criou
             let allSubjects = [...TODAS_MATERIAS, ...customSubjects];
 
             allSubjects.forEach(m => {
@@ -540,19 +587,14 @@ Segue a lista de questões:
         function addCustomSubject() {
             let sigla = document.getElementById('custom-sigla').value.toUpperCase().trim();
             let nome = document.getElementById('custom-nome').value.trim();
-            
             if(!sigla || !nome) return alert("Preencha a Sigla e o Nome da matéria.");
-            
             let allSubjects = [...TODAS_MATERIAS, ...customSubjects];
             if(allSubjects.some(m => m.chaves[0] === sigla)) {
                 return alert("Esta sigla já existe no sistema! Use outra sigla.");
             }
-
             let novaMateria = { chaves: [sigla], nome: nome };
             customSubjects.push(novaMateria);
             localStorage.setItem('pqdtCustomSubjects', JSON.stringify(customSubjects));
-            
-            // Adiciona automaticamente ao ciclo do aluno e recarrega a tela
             tempCiclo.push(novaMateria);
             document.getElementById('custom-sigla').value = '';
             document.getElementById('custom-nome').value = '';
@@ -561,7 +603,6 @@ Segue a lista de questões:
 
         function saveConfig() {
             if(tempCiclo.length === 0) return alert("Comandante, selecione pelo menos uma matéria para gerar o ciclo!");
-            
             cicloMaster = JSON.parse(JSON.stringify(tempCiclo));
             localStorage.setItem('pqdtCicloCustom', JSON.stringify(cicloMaster));
             updateSelects();
@@ -586,6 +627,8 @@ Segue a lista de questões:
             let textToCopy = document.getElementById('ai-prompt').innerText;
             navigator.clipboard.writeText(textToCopy).then(() => {
                 alert("Prompt copiado com sucesso! Abra o ChatGPT ou Gemini e inicie sua fase 1.");
+            }).catch(err => {
+                alert("Erro ao copiar o texto. Por favor, selecione e copie manualmente.");
             });
         }
 
@@ -623,7 +666,6 @@ Segue a lista de questões:
             let e = document.getElementById('log-email').value.trim().toLowerCase();
             let s = document.getElementById('log-pass').value.trim();
             if(!e || !s) return alert("Preencha E-mail e Senha!");
-            
             let btn = document.querySelector('.btn-access');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando...';
             
@@ -690,7 +732,7 @@ Segue a lista de questões:
         }
 
         // ==============================================================================
-        // LEITURA DE DADOS
+        // LEITURA DE DADOS E CÁLCULO DE MOEDAS
         // ==============================================================================
         function loadGoogleSheetsData() {
             let btn = document.getElementById('btn-sync'); btn.innerHTML = "Lendo...";
@@ -704,7 +746,9 @@ Segue a lista de questões:
         }
 
         function processData(data) {
-            globalData = []; groupedDaily = {}; groupedWeekly = {}; totalQHistory = 0; dailyQ = 0; dailyMins = 0;
+            globalData = []; groupedDaily = {}; groupedWeekly = {}; 
+            totalQHistory = 0; dailyQ = 0; dailyMins = 0; totalMoedas = 0;
+            
             currentWeekStr = getWeekNumber(new Date()); 
             let uniqueS = new Set();
             let todayStr = new Date().toLocaleDateString('pt-BR');
@@ -738,6 +782,12 @@ Segue a lista de questões:
                 if(!groupedWeekly[weekKey].subjects[mat]) groupedWeekly[weekKey].subjects[mat] = {q:0, a:0, t:0};
                 groupedWeekly[weekKey].subjects[mat].q += q; groupedWeekly[weekKey].subjects[mat].a += a; groupedWeekly[weekKey].subjects[mat].t += t;
             }
+
+            // CALCULAR AS MOEDAS COM BASE NO HISTÓRICO DE DIAS BEM SUCEDIDOS
+            for(let day in groupedDaily) {
+                if(groupedDaily[day].q >= 100) totalMoedas += 50; // Meta de Questões (50 moedas)
+                if(groupedDaily[day].t >= 120) totalMoedas += 50; // Meta de Tempo (50 moedas)
+            }
             
             globalData.sort((a,b) => b.date - a.date !== 0 ? b.date - a.date : b.origIdx - a.origIdx);
             
@@ -751,18 +801,70 @@ Segue a lista de questões:
         // MÓDULOS DE RENDERIZAÇÃO
         // ==============================================================================
         function updateRank() {
-            let r = GAMER_RANKS[0]; let n = GAMER_RANKS[1];
-            for(let i=0; i<GAMER_RANKS.length; i++) { if(totalQHistory >= GAMER_RANKS[i].threshold) { r = GAMER_RANKS[i]; n = GAMER_RANKS[i+1] || r; } }
+            let r = GAMER_RANKS[0]; let n = GAMER_RANKS[1]; let currentIdx = 0;
+            for(let i=0; i<GAMER_RANKS.length; i++) { 
+                if(totalQHistory >= GAMER_RANKS[i].threshold) { r = GAMER_RANKS[i]; n = GAMER_RANKS[i+1] || r; currentIdx = i; } 
+            }
+            
             document.getElementById('rank-title').innerText = r.title;
             document.getElementById('rank-icon').className = `fas ${r.icon} rank-icon`;
             let p = ((totalQHistory - r.threshold) / (n.threshold - r.threshold)) * 100;
             document.getElementById('rank-progress-text').innerText = `${totalQHistory.toLocaleString()} / ${n.threshold.toLocaleString()} Q`;
             document.getElementById('rank-bar').style.width = Math.min(p, 100) + '%';
 
+            // Atualiza Saldo de Moedas
+            document.getElementById('coin-display').innerText = totalMoedas.toLocaleString('pt-BR');
+
             let dh = (dailyMins/60).toFixed(1);
             document.getElementById('txt-daily-q').innerText = dailyQ; document.getElementById('txt-daily-h').innerText = dh;
             document.getElementById('badge-q').className = dailyQ >= 100 ? "badge active-q" : "badge";
-            document.getElementById('badge-h').className = dh >= 2 ? "badge active-h" : "badge";
+            document.getElementById('badge-h').className = dailyMins >= 120 ? "badge active-h" : "badge";
+        }
+
+        // MODAL DE PATENTES
+        function openRanksModal() {
+            let container = document.getElementById('ranks-list-container');
+            let infoContainer = document.getElementById('next-rank-info');
+            container.innerHTML = ''; infoContainer.innerHTML = '';
+            
+            let currentIdx = 0;
+            for(let i=0; i<GAMER_RANKS.length; i++) { if(totalQHistory >= GAMER_RANKS[i].threshold) { currentIdx = i; } }
+
+            let nextRank = GAMER_RANKS[currentIdx + 1];
+            if (nextRank) {
+                let faltam = nextRank.threshold - totalQHistory;
+                infoContainer.innerHTML = `
+                    <div style="background: rgba(58, 134, 255, 0.1); border: 1px solid var(--accent-blue); padding: 15px; border-radius: 8px; text-align: center;">
+                        <strong style="color: var(--accent-blue); font-size: 1.1em;">Próxima Patente: ${nextRank.title}</strong><br>
+                        <span style="font-size: 0.95em; color: #ccc;">Faltam <strong>${faltam.toLocaleString('pt-BR')}</strong> questões para a promoção.</span>
+                    </div>`;
+            } else {
+                infoContainer.innerHTML = `
+                    <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid var(--accent-gold); padding: 15px; border-radius: 8px; text-align: center;">
+                        <strong style="color: var(--accent-gold); font-size: 1.1em;"><i class="fas fa-crown"></i> Você atingiu a Patente Máxima!</strong>
+                    </div>`;
+            }
+
+            GAMER_RANKS.forEach((rank, index) => {
+                let isCurrent = index === currentIdx;
+                let isLocked = index > currentIdx;
+                let liClass = isCurrent ? 'rank-list-item current' : (isLocked ? 'rank-list-item locked' : 'rank-list-item');
+                let color = isCurrent ? 'var(--accent-gold)' : (isLocked ? '#555' : '#aaa');
+                
+                container.innerHTML += `
+                    <div class="${liClass}">
+                        <div style="width: 40px; text-align: center;"><i class="fas ${rank.icon}" style="font-size: 1.8em; color: ${color};"></i></div>
+                        <div style="flex-grow: 1;">
+                            <div style="color: ${isCurrent ? 'white' : (isLocked ? '#666' : '#ccc')}; font-weight: bold; font-size: 1.1em;">
+                                ${rank.title} ${isCurrent ? '<span style="font-size:0.7em; color:var(--accent-gold); margin-left:5px;">(Atual)</span>' : ''}
+                            </div>
+                            <div style="font-size: 0.85em; color: #777;">Desbloqueia com ${rank.threshold.toLocaleString('pt-BR')} Qs</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('ranksModal').style.display = 'block';
         }
 
         function saveGoals() { localStorage.setItem('metaHrs', document.getElementById('meta-hrs').value); localStorage.setItem('metaQ', document.getElementById('meta-q').value); updateGPS(); }
@@ -899,19 +1001,6 @@ Segue a lista de questões:
             
             fetch(WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
             .then(() => { alert("Missão Cumprida!"); document.getElementById('studyForm').reset(); document.getElementById('entryModal').style.display='none'; btn.innerHTML='ENVIAR'; btn.disabled=false; setTimeout(loadGoogleSheetsData, 1000); });
-        }
-    </script>
-    <script>
-        // Desativa o botão direito do mouse
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        // Desativa F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-        document.onkeydown = function(e) {
-            if(e.keyCode == 123) { return false; } // F12
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; }
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; } // Ctrl+U (Ver código-fonte)
         }
     </script>
 </body>
