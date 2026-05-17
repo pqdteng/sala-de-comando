@@ -150,12 +150,16 @@
         .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 15px; max-height: 200px; overflow-y: auto; padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border-color);}
         .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.9em; cursor: pointer; padding: 5px; border-radius: 4px;}
         .checkbox-label:hover { background: var(--hover-bg); }
+        
         .sortable-list { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; max-height: 250px; overflow-y: auto; margin-bottom: 20px; }
         .sortable-item { display: flex; justify-content: space-between; align-items: center; background: var(--hover-bg); padding: 8px 15px; margin-bottom: 6px; border-radius: 6px; border-left: 3px solid var(--accent-blue); }
         .sortable-actions button { background: none; border: none; color: #888; cursor: pointer; font-size: 1.2em; padding: 5px; transition: 0.2s; }
         .sortable-actions button:hover { color: var(--accent-blue); transform: scale(1.1); }
+        .sortable-actions button:disabled { opacity: 0.2; cursor: default; transform: none; }
+        
         .custom-subject-box { background: var(--hover-bg); border-left: 4px solid var(--accent-green); padding: 15px; margin-top: 20px; border-radius: 8px; margin-bottom: 25px;}
 
+        /* RESPONSIVIDADE */
         @media (max-width: 768px) {
             body { padding: 10px; }
             .header { flex-direction: column; align-items: stretch; text-align: center; }
@@ -170,7 +174,8 @@
             #clock-display { font-size: 2.5em; }
             .timer-display { font-size: 3.5em; }
             .gps-container { grid-template-columns: 1fr; }
-            .grid-gps-inner, .grid-2-col, .grid-3-col { grid-template-columns: 1fr; }
+            .grid-gps-inner { grid-template-columns: 1fr; }
+            .grid-2-col, .grid-3-col { grid-template-columns: 1fr; }
             .charts-row { grid-template-columns: 1fr; }
             .modal-content { padding: 15px; margin: 10% auto; }
             .custom-inputs { flex-direction: column; }
@@ -187,7 +192,7 @@
             <input type="email" id="log-email" class="login-input" placeholder="Seu E-mail">
             <input type="password" id="log-pass" class="login-input" placeholder="Sua Senha">
             <button class="btn-access" onclick="login()">ENTRAR</button>
-            <button class="btn-access btn-tutorial" onclick="document.getElementById('tutorialModal').style.display='block'" style="background: var(--input-border); color: #E0E0E0; margin-top: 15px; border: 1px solid var(--border-color);"><i class="fas fa-book-open"></i> Conhecer o Método</button>
+            <button class="btn-access btn-tutorial" onclick="document.getElementById('tutorialModal').style.display='block'" style="background: var(--input-bg); color: var(--text-color); margin-top: 15px; border: 1px solid var(--input-border);"><i class="fas fa-book-open"></i> Conhecer o Método</button>
             <div class="access-links">
                 <a onclick="showScreen('register')">Ativar Primeiro Acesso</a>
                 <a onclick="showScreen('reset')">Esqueci a Senha</a>
@@ -232,6 +237,9 @@
                         <button class="dropdown-item" onclick="openProfileModal(); toggleMenu();"><i class="fas fa-user-circle"></i> Meu Perfil</button>
                         <button class="dropdown-item" onclick="openConfigModal(); toggleMenu();"><i class="fas fa-cogs"></i> Configurar Ciclo</button>
                         <button class="dropdown-item" onclick="document.getElementById('tutorialModal').style.display='block'; toggleMenu();"><i class="fas fa-book-reader"></i> O Método</button>
+                        
+                        <button class="dropdown-item" onclick="document.getElementById('platformTutorialModal').style.display='block'; toggleMenu();"><i class="fas fa-laptop-code"></i> Guia da Plataforma</button>
+                        
                         <button class="dropdown-item" onclick="showVerse(); toggleMenu();"><i class="fas fa-bible" style="color:var(--accent-gold);"></i> Palavra do Dia</button>
                         <button class="dropdown-item" id="btn-foco" onclick="toggleFocus(); toggleMenu();"><i class="fas fa-crosshairs"></i> Modo Foco</button>
                         <button class="dropdown-item" onclick="toggleTheme(); toggleMenu();"><i class="fas fa-adjust"></i> Trocar Tema</button>
@@ -332,7 +340,7 @@
 
             <div style="overflow-x: auto;">
                 <table class="leaderboard-table" style="width:100%; border-collapse:collapse; text-align:left;">
-                    <thead><tr style="color:var(--accent-gold); border-bottom:1px solid #444;"><th style="padding:10px;">#</th><th>Nickname</th><th>Questões</th><th>Precisão</th></tr></thead>
+                    <thead><tr style="color:var(--accent-gold); border-bottom:1px solid var(--border-color);"><th style="padding:10px;">#</th><th>Nickname</th><th>Questões</th><th>Precisão</th></tr></thead>
                     <tbody id="leaderboard-body"></tbody>
                 </table>
             </div>
@@ -381,13 +389,50 @@
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="custom-sigla" placeholder="Sigla (Ex: CRIM)" style="flex: 1; min-width: 80px; padding: 10px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-color); border-radius: 5px; text-transform: uppercase;">
                     <input type="text" id="custom-nome" placeholder="Nome da Matéria (Ex: Criminologia)" style="flex: 3; min-width: 150px; padding: 10px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-color); border-radius: 5px;">
-                    <button onclick="addCustomSubject()" class="btn" style="background: var(--accent-green); border: none;"><i class="fas fa-plus"></i></button>
+                    <button type="button" onclick="addCustomSubject()" class="btn" style="background: var(--accent-green); border: none;"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
 
             <p style="font-size: 0.9em; margin-top: 25px; margin-bottom: 5px;"><strong>2. Organize a Ordem de Estudo:</strong></p>
             <div class="sortable-list" id="sortable-list"></div>
-            <button class="form-submit-btn" style="background:var(--accent-orange); color:black; margin-top: 5px;" onclick="saveConfig()">SALVAR MEU CICLO ESTRATÉGICO</button>
+            <button type="button" class="form-submit-btn" style="background:var(--accent-orange); color:black; margin-top: 5px;" onclick="saveConfig()">SALVAR MEU CICLO ESTRATÉGICO</button>
+        </div>
+    </div>
+
+    <div id="platformTutorialModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('platformTutorialModal').style.display='none'">&times;</span>
+            <h2 style="color: var(--accent-blue); margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-laptop-code"></i> Guia da Plataforma</h2>
+            <p style="font-size: 0.95em; line-height: 1.5; color: var(--text-color);">Bem-vindo à <strong>Sala de Comando</strong>. Entenda como utilizar as engrenagens do seu ecossistema para maximizar sua performance:</p>
+            
+            <div style="background: var(--hover-bg); padding:15px; border-radius:8px; font-size:0.9em; margin-bottom: 15px; border-left: 4px solid var(--accent-orange);">
+                <h4 style="margin-top:0; color: var(--accent-orange);"><i class="fas fa-cogs"></i> 1. O Ciclo e o GPS Tático</h4>
+                <p style="margin-bottom:0;">No menu <strong>Configurar Ciclo</strong>, escolha as matérias do edital e organize a ordem. O <strong>GPS</strong> (na tela inicial) assumirá o controle e te dirá qual a próxima matéria estudar. O sistema só avança o assunto quando você atinge <strong>85% de acertos</strong> na fase 4, garantindo a consolidação.</p>
+            </div>
+
+            <div style="background: var(--hover-bg); padding:15px; border-radius:8px; font-size:0.9em; margin-bottom: 15px; border-left: 4px solid var(--accent-purple);">
+                <h4 style="margin-top:0; color: var(--accent-purple);"><i class="fas fa-pen-nib"></i> 2. Diário de Batalha (Lançamentos)</h4>
+                <p style="margin-bottom:0;">Registre seu tempo, questões e acertos clicando em <strong>Lançar Missão</strong>. Cometeu um erro de digitação? Sem problemas. Abra o formulário novamente e clique no botão laranja <strong>Corrigir Meu Último Lançamento</strong> para editar os dados. O sistema ajusta o ranking automaticamente.</p>
+            </div>
+
+            <div style="background: var(--hover-bg); padding:15px; border-radius:8px; font-size:0.9em; margin-bottom: 15px; border-left: 4px solid var(--accent-gold);">
+                <h4 style="margin-top:0; color: var(--accent-gold);"><i class="fas fa-trophy"></i> 3. Gamificação, Patentes e Moedas</h4>
+                <p style="margin-bottom:0;">Todo o seu esforço gera <strong>XP (Questões)</strong> para subir de Patente, de Iniciante a Conselheiro. Além disso, bata suas metas diárias para acumular <strong>Moedas de Batalha</strong>:<br><br>
+                • Meta de 100 Questões no dia = +50 Moedas<br>
+                • Meta de 2 Horas Líquidas no dia = +50 Moedas</p>
+            </div>
+
+            <div style="background: var(--hover-bg); padding:15px; border-radius:8px; font-size:0.9em; margin-bottom: 15px; border-left: 4px solid var(--accent-red);">
+                <h4 style="margin-top:0; color: var(--accent-red);"><i class="fas fa-globe"></i> 4. Ranking Global e Efeito Líder</h4>
+                <p style="margin-bottom:0;">Acompanhe sua posição no Top 50 nas abas <strong>Hoje, Mês e Geral</strong>. A precisão (% de acertos) também é exposta para separar os atiradores de elite dos chutadores. E atenção: se você for o <strong>1º Lugar</strong> de qualquer lista, seu painel principal ganhará um efeito radiante dourado ("Efeito Líder")!</p>
+            </div>
+
+            <div style="background: var(--hover-bg); padding:15px; border-radius:8px; font-size:0.9em; margin-bottom: 15px; border-left: 4px solid var(--accent-green);">
+                <h4 style="margin-top:0; color: var(--accent-green);"><i class="fas fa-crosshairs"></i> 5. Foco e Personalização</h4>
+                <p style="margin-bottom:0;">Precisa de concentração absoluta? Clique no botão <strong>Modo Foco</strong>. Toda a poluição visual sumirá, deixando apenas o cronômetro para o combate. Você também pode personalizar seu Nickname pelo botão <strong>Meu Perfil</strong> e alternar entre Tema Claro e Escuro.</p>
+            </div>
+            
+            <button class="btn" style="background:var(--accent-blue); margin-top:10px; width:100%;" onclick="document.getElementById('platformTutorialModal').style.display='none'">ENTENDIDO! VAMOS AO COMBATE!</button>
         </div>
     </div>
 
@@ -408,7 +453,7 @@ Aja como um professor especialista em concursos públicos. Estou estudando [INSE
 Gostaria que fizesse:
 1. Resumo Estratégico completo direto ao ponto destacando pegadinhas recorrentes.
 2. Análise com comentários explicativos sobre as alternativas das questões enviadas abaixo.</div>
-            <button class="btn" style="background:var(--hover-bg); color:var(--text-color); margin-top:10px; width:100%; border: 1px solid var(--border-color);" onclick="copyPrompt()"><i class="fas fa-copy"></i> Copiar Prompt</button>
+            <button type="button" class="btn" style="background:var(--hover-bg); color:var(--text-color); margin-top:10px; width:100%; border: 1px solid var(--border-color);" onclick="copyPrompt()"><i class="fas fa-copy"></i> Copiar Prompt</button>
         </div>
     </div>
 
@@ -429,6 +474,9 @@ Gostaria que fizesse:
         <div class="modal-content">
             <span class="close-btn" onclick="document.getElementById('entryModal').style.display='none'">&times;</span>
             <h2 style="color: var(--accent-blue); margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-pen-nib"></i> Diário de Batalha</h2>
+            
+            <button type="button" class="btn" style="background: transparent; border: 1px dashed var(--accent-orange); color: var(--accent-orange); width: 100%; margin-bottom: 15px;" onclick="loadLastEntryToEdit()"><i class="fas fa-history"></i> Corrigir Meu Último Lançamento</button>
+
             <form id="studyForm" onsubmit="submitEntry(event)">
                 <div class="grid-2-col">
                     <div class="form-group"><label>Data</label><input type="date" id="f-data" required></div>
@@ -460,6 +508,7 @@ Gostaria que fizesse:
         let loggedUserEmail = localStorage.getItem('pqdtEmail') || "";
         let loggedUserSenha = localStorage.getItem('pqdtSenha') || "";
         let globalExpiration = ""; let globalNickname = "Recruta"; let globalLeaderboards = {};
+        let isEditingMode = false;
 
         if(localStorage.getItem('pqdtTheme') === 'light') document.body.classList.add('light-mode');
         function updateChartColors() {
@@ -498,14 +547,13 @@ Gostaria que fizesse:
         let customSubjects = JSON.parse(localStorage.getItem('pqdtCustomSubjects')) || [];
         let cicloMaster = []; let tempCiclo = [];   
 
-        /* LÓGICA DO MENU HAMBÚRGUER */
+        /* MENU HAMBÚRGUER LOGIC */
         function toggleMenu() { document.getElementById('main-menu').classList.toggle('show'); }
         window.onclick = function(event) {
             if (!event.target.matches('.hamburger-btn') && !event.target.matches('.hamburger-btn *')) {
                 var dropdowns = document.getElementsByClassName("dropdown-menu");
                 for (var i = 0; i < dropdowns.length; i++) {
-                    var openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) { openDropdown.classList.remove('show'); }
+                    if (dropdowns[i].classList.contains('show')) dropdowns[i].classList.remove('show');
                 }
             }
         }
@@ -544,14 +592,14 @@ Gostaria que fizesse:
 
             tempCiclo.forEach((m, index) => {
                 let isCustom = customSubjects.some(cs => cs.chaves[0] === m.chaves[0]);
-                let deleteBtn = isCustom ? `<button onclick="deleteCustomSubject('${m.chaves[0]}')" style="color:var(--accent-red); background:none; border:none; cursor:pointer;" title="Excluir Matéria Criada"><i class="fas fa-trash"></i></button>` : '';
+                let deleteBtn = isCustom ? `<button type="button" onclick="deleteCustomSubject('${m.chaves[0]}')" style="color:var(--accent-red); background:none; border:none; cursor:pointer;" title="Excluir Matéria Criada"><i class="fas fa-trash"></i></button>` : '';
                 containerList.innerHTML += `
                     <div class="sortable-item">
                         <span style="font-size:0.9em;"><strong>${index + 1}.</strong> ${m.nome}</span>
                         <div class="sortable-actions" style="display:flex; gap:5px;">
                             ${deleteBtn}
-                            <button onclick="moveItem(${index}, -1)" ${index === 0 ? 'disabled' : ''}><i class="fas fa-chevron-up"></i></button>
-                            <button onclick="moveItem(${index}, 1)" ${index === tempCiclo.length - 1 ? 'disabled' : ''}><i class="fas fa-chevron-down"></i></button>
+                            <button type="button" onclick="moveItem(${index}, -1)" ${index === 0 ? 'disabled' : ''}><i class="fas fa-chevron-up"></i></button>
+                            <button type="button" onclick="moveItem(${index}, 1)" ${index === tempCiclo.length - 1 ? 'disabled' : ''}><i class="fas fa-chevron-down"></i></button>
                         </div>
                     </div>`;
             });
@@ -750,7 +798,7 @@ Gostaria que fizesse:
                 let dayKey = dateObj.toLocaleDateString('pt-BR'); let weekKey = getWeekNumber(dateObj);
                 if(dayKey === todayStr) { dailyQ += q; dailyMins += t; }
 
-                globalData.push({ date: dateObj, mat: mat, link: r[4] ? String(r[4]).trim() : '', q: q, a: a, t: t, fase: r[8] ? String(r[8]).trim() : '', k: r[10] ? String(r[10]).trim() : '', l: r[11] ? String(r[11]).trim() : '', origIdx: i });
+                globalData.push({ date: dateObj, mat: mat, topico: r[3]?String(r[3]).trim():'', link: r[4] ? String(r[4]).trim() : '', q: q, a: a, t: t, fase: r[8] ? String(r[8]).trim() : '', k: r[10] ? String(r[10]).trim() : '', l: r[11] ? String(r[11]).trim() : '', origIdx: i });
 
                 if(!groupedDaily[dayKey]) groupedDaily[dayKey] = { q:0, a:0, t:0, dateObj: dateObj, subjects: {} };
                 groupedDaily[dayKey].q += q; groupedDaily[dayKey].a += a; groupedDaily[dayKey].t += t;
@@ -922,16 +970,61 @@ Gostaria que fizesse:
             modalPieChartObj = new Chart(ctxM, { type: 'doughnut', data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: chartColors.slice(0, chartLabels.length), borderColor: document.body.classList.contains('light-mode') ? '#fff' : '#252525', borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: Chart.defaults.color } } }, cutout: '65%' } });
         }
 
-        function openEntryModal() { document.getElementById('entryModal').style.display='block'; if(timerSeconds>0) document.getElementById('f-tempo').value = Math.floor(timerSeconds/60); }
+        // --- SISTEMA DE RETIFICAÇÃO DO ÚLTIMO LANÇAMENTO ---
+        function openEntryModal() { 
+            isEditingMode = false;
+            document.getElementById('studyForm').reset();
+            document.getElementById('f-data').valueAsDate = new Date();
+            document.getElementById('btn-submit-form').innerText = "ENVIAR";
+            document.getElementById('btn-submit-form').style.background = "var(--accent-green)";
+            document.getElementById('btn-submit-form').style.color = "white";
+            if(timerSeconds>0) document.getElementById('f-tempo').value = Math.floor(timerSeconds/60);
+            document.getElementById('entryModal').style.display='block'; 
+        }
+
+        function loadLastEntryToEdit() {
+            if(globalData.length === 0) return alert("Você ainda não tem lançamentos!");
+            let last = globalData[0]; // o index 0 já é o mais recente devido ao sort()
+
+            let d = last.date;
+            let yyyy = d.getFullYear();
+            let mm = String(d.getMonth() + 1).padStart(2, '0');
+            let dd = String(d.getDate()).padStart(2, '0');
+
+            document.getElementById('f-data').value = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('f-materia').value = last.mat;
+            document.getElementById('f-topico').value = last.topico || '';
+            document.getElementById('f-tipo-link').value = last.link || '';
+            document.getElementById('f-tempo').value = last.t;
+            document.getElementById('f-q').value = last.q;
+            document.getElementById('f-a').value = last.a;
+            document.getElementById('f-fase').value = last.fase || '1';
+
+            isEditingMode = true;
+            document.getElementById('btn-submit-form').innerText = "SALVAR RETIFICAÇÃO";
+            document.getElementById('btn-submit-form').style.background = "var(--accent-orange)";
+            document.getElementById('btn-submit-form').style.color = "black";
+        }
 
         function submitEntry(e) {
             e.preventDefault();
-            let btn = document.getElementById('btn-submit-form'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Lançando...'; btn.disabled = true;
+            let btn = document.getElementById('btn-submit-form'); 
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...'; btn.disabled = true;
             let p = document.getElementById('f-data').value.split('-');
-            let payload = { acao: "lancamento", email: loggedUserEmail, dataEstudo: `${p[2]}/${p[1]}/${p[0]}`, materia: document.getElementById('f-materia').value, topico: document.getElementById('f-topico').value, tipoLink: document.getElementById('f-tipo-link').value, tempo: document.getElementById('f-tempo').value, questoes: document.getElementById('f-q').value, acertos: document.getElementById('f-a').value, fase: document.getElementById('f-fase').value };
+            
+            // Define se é lançamento novo ou retificação
+            let actionStr = isEditingMode ? "retificar_ultimo" : "lancamento";
+
+            let payload = { acao: actionStr, email: loggedUserEmail, dataEstudo: `${p[2]}/${p[1]}/${p[0]}`, materia: document.getElementById('f-materia').value, topico: document.getElementById('f-topico').value, tipoLink: document.getElementById('f-tipo-link').value, tempo: document.getElementById('f-tempo').value, questoes: document.getElementById('f-q').value, acertos: document.getElementById('f-a').value, fase: document.getElementById('f-fase').value };
             
             fetch(WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
-            .then(() => { alert("Missão Cumprida!"); document.getElementById('studyForm').reset(); document.getElementById('entryModal').style.display='none'; btn.innerHTML='ENVIAR PARA A NUVEM'; btn.disabled=false; loadGoogleSheetsData(); });
+            .then(() => { 
+                alert(isEditingMode ? "Lançamento Corrigido!" : "Missão Cumprida!"); 
+                document.getElementById('studyForm').reset(); 
+                document.getElementById('entryModal').style.display='none'; 
+                btn.disabled=false; 
+                loadGoogleSheetsData(); 
+            });
         }
 
         window.onload = function() {
